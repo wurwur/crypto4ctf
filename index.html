@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto for CTFs</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+
+  <!-- Prism.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Mobile Hamburger -->
+<button class="hamburger" aria-label="Toggle menu">Menu</button>
+
+<div class="app-layout">
+
+<!-- ============================================================ -->
+<!-- SIDEBAR                                                       -->
+<!-- ============================================================ -->
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <h1>Crypto for CTFs</h1>
+  </div>
+  <div class="progress-container">
+    <div class="progress-bar-bg"><div class="progress-bar-fill"></div></div>
+    <div class="progress-text"><span>Progress</span><span class="progress-pct">0%</span></div>
+  </div>
+  <ul class="toc-list">
+    <li><a href="#intro"><span class="toc-icon">:)</span> Why Cryptography?</a></li>
+    <li><a href="#caesar"><span class="toc-icon">:D</span> Caesar Cipher</a></li>
+    <li><a href="#vigenere"><span class="toc-icon">;)</span> Vigenere Cipher</a></li>
+    <li><a href="#otp"><span class="toc-icon">:o</span> One-Time Pad</a></li>
+    <li><a href="#aes"><span class="toc-icon">:|</span> AES (Symmetric)</a></li>
+    <li><a href="#aes-pitfalls"><span class="toc-icon">:/</span> AES CTF Pitfalls</a></li>
+    <li><a href="#asymmetric"><span class="toc-icon">:P</span> Asymmetric Crypto</a></li>
+    <li><a href="#rsa"><span class="toc-icon">:3</span> RSA</a></li>
+    <li><a href="#rsa-pitfalls"><span class="toc-icon">:(</span> RSA CTF Pitfalls</a></li>
+    <li><a href="#hashing"><span class="toc-icon">:]</span> Hashing</a></li>
+    <li><a href="#prng"><span class="toc-icon">;D</span> PRNG and LCG</a></li>
+  </ul>
+</nav>
+
+<!-- ============================================================ -->
+<!-- MAIN CONTENT                                                  -->
+<!-- ============================================================ -->
+<main class="main-content">
+
+<section id="intro" class="lecture-section">
+  <div class="section-header">
+    <div class="section-number">Section 01</div>
+    <h2 class="section-title">Crypto? Like dogecoin?</h2>
+  </div>
+
+  <h3>The Open-Channel Problem</h3>
+
+  <p>On the internet, it is <strong>very hard</strong> to ensure that information traveling between two individuals can be read by them only.</p>
+  <p>Sniffing, Recording, Man in The Middle... So many attack vectors exist to <em>collect information about conversations between two individuals</em>. Cryptography's role is to create protocols and algorithms to ensure the safety of a conversation between our subjects: <strong>Alice & Bob.</strong></p>
+
+  <div class="figure-container reveal">
+    <svg viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg" style="max-width:550px">
+      <!-- Alice -->
+      <circle cx="80" cy="100" r="35" fill="#131a2b" stroke="#00f0ff" stroke-width="2"/>
+      <text x="80" y="95" text-anchor="middle" fill="#00f0ff" font-size="22" font-family="JetBrains Mono" font-weight="bold">A</text>
+      <text x="80" y="115" text-anchor="middle" fill="#00f0ff" font-size="11" font-family="JetBrains Mono">Alice</text>
+
+      <!-- Channel (wavy line) -->
+      <path d="M130 100 Q200 60 300 100 Q400 140 470 100" fill="none" stroke="#4a5568" stroke-width="2" stroke-dasharray="5,5">
+        <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="1s" repeatCount="indefinite"/>
+      </path>
+      <text x="300" y="80" text-anchor="middle" fill="#ff2d6b" font-size="10" font-family="JetBrains Mono">OPEN CHANNEL</text>
+
+      <!-- Message envelope (animated along straight path) -->
+      <path id="msg-path" d="M140,120 L440,120" fill="none" stroke="none"/>
+      <g>
+        <animateMotion dur="3s" repeatCount="indefinite">
+          <mpath href="#msg-path"/>
+        </animateMotion>
+        <rect x="-30" y="-17" width="60" height="35" rx="4" fill="#131a2b" stroke="#7b61ff" stroke-width="1.5"/>
+        <text x="0" y="5" text-anchor="middle" fill="#7b61ff" font-size="12" font-family="JetBrains Mono">[msg]</text>
+      </g>
+
+      <!-- Bob -->
+      <circle cx="520" cy="100" r="35" fill="#131a2b" stroke="#00f0ff" stroke-width="2"/>
+      <text x="520" y="95" text-anchor="middle" fill="#00f0ff" font-size="22" font-family="JetBrains Mono" font-weight="bold">B</text>
+      <text x="520" y="115" text-anchor="middle" fill="#00f0ff" font-size="11" font-family="JetBrains Mono">Bob</text>
+
+      <!-- Eve -->
+      <circle cx="300" cy="180" r="28" fill="#131a2b" stroke="#ff2d6b" stroke-width="2"/>
+      <text x="300" y="177" text-anchor="middle" fill="#ff2d6b" font-size="18" font-family="JetBrains Mono" font-weight="bold">E</text>
+      <text x="300" y="192" text-anchor="middle" fill="#ff2d6b" font-size="10" font-family="JetBrains Mono">Eve</text>
+      <line x1="300" y1="152" x2="300" y2="110" stroke="#ff2d6b" stroke-width="1" stroke-dasharray="3,3"/>
+    </svg>
+    <div class="figure-caption">While Eve eavesdrops, Alice and Bob want to communicate privately</div>
+  </div>
+
+  <div class="callout callout-key reveal">
+    <div class="callout-title">[!] Key Idea</div>
+    <strong>Cryptography</strong>: the science of transforming messages so only authorized parties can understand them.
+  </div>
+
+  <div class="callout callout-info reveal">
+    <div class="callout-title">[*] Crypto is "Open Source"</div>
+    Unlike most CTF categories (which are glorified guesswork), crypto is built on <strong>Kerckhoffs's principle</strong>: the attacker knows <em>everything</em> about the system, except the key. Closed source cryptography challenges are called rev, and you should flee from them like the plague! Your goal in a crypto CTF is to <strong>find what went wrong</strong> in a known system: a weak key, a reused nonce, a broken mode... You always know how it works; you just need to figure out <em>what's broken</em>.
+  </div>
+
+  <h3>Encodings</h3>
+  <p>It is important to note that data can be represented in different formats, which you should be familiar with. At the end of the day, it's all <em>binary with extra spice</em>.</p>
+
+  <div class="equation-box reveal">
+    <div class="equation-label">Base Conversion</div>
+    $$\text{Binary} \to \text{Decimal}: \sum_{i=0}^{n-1} b_i \cdot 2^i \quad\quad \text{Hex digit} = 4\text{ bits} \quad\quad \text{Base64 digit} = 6\text{ bits}$$
+    <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem">Example: 01000001 = 0+64+0+0+0+0+0+1 = 65 (decimal) = 0x41 (hex) = 'A' (ASCII)</div>
+  </div>
+
+  <div class="interactive-widget reveal">
+    <div class="widget-title">Encoding Converter</div>
+    <div style="margin-bottom:0.8rem">
+      <input id="encoding-input" class="challenge-input" type="text" maxlength="1" value="A" style="max-width:80px;text-align:center;font-size:1.4rem">
+    </div>
+    <div class="encoding-grid">
+      <div class="encoding-cell"><div class="label">Decimal (Base-10)</div><div class="value" id="enc-decimal">65</div></div>
+      <div class="encoding-cell"><div class="label">Binary (Base-2)</div><div class="value" id="enc-binary">01000001</div></div>
+      <div class="encoding-cell"><div class="label">Hex (Base-16)</div><div class="value" id="enc-hex">41</div></div>
+      <div class="encoding-cell"><div class="label">Base64</div><div class="value" id="enc-base64">QQ==</div></div>
+    </div>
+  </div>
+
+  <h3>XORing</h3>
+  <p>The <strong>XOR</strong> (aka exclusive OR) operation is one of the most fondamental operations of most encryption. The bit-wise XOR <em>^</em> simply applies the rules detailed in the <strong>truth table</strong> below for each bit.</p>
+
+  <div class="interactive-widget reveal" id="xor-demo">
+    <div class="widget-title">XOR Demo</div>
+    <div style="display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;">
+        <div style="font-family:var(--font-mono);font-size:1.1rem;line-height:2;">
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <span class="text-muted" style="width:20px;">A:</span>
+            <input class="challenge-input xor-input-a" value="01001000" style="width:160px;text-align:center;letter-spacing:3px" maxlength="8">
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <span class="text-cyan" style="width:20px;font-weight:bold">^</span>
+            <input class="challenge-input xor-input-b" value="00110110" style="width:160px;text-align:center;letter-spacing:3px" maxlength="8">
+          </div>
+          <div style="border-top:2px solid var(--cyan);width:180px;margin:0.2rem 0 0.2rem 26px;"></div>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <span class="text-green" style="width:20px">=</span>
+            <div class="xor-result font-mono text-green" style="font-size:1.1rem;padding:0.4rem 0;letter-spacing:3px;min-width:160px;text-align:center">01111110</div>
+          </div>
+        </div>
+      </div>
+      <div style="min-width:140px;">
+        <table class="styled-table" style="font-size:0.85rem;text-align:center">
+          <thead><tr><th>A</th><th>B</th><th>A^B</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>0</td><td class="text-green">0</td></tr>
+            <tr><td>0</td><td>1</td><td class="text-green">1</td></tr>
+            <tr><td>1</td><td>0</td><td class="text-green">1</td></tr>
+            <tr><td>1</td><td>1</td><td class="text-green">0</td></tr>
+          </tbody>
+        </table>
+        <div class="figure-caption">XOR truth table</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-info reveal">
+    <div class="callout-title">[*] XOR is its own inverse</div>
+    <code>message XOR key = ciphertext</code> and <code>ciphertext XOR key = message</code> -- this property makes XOR perfect for encryption.
+  </div>
+
+  <div class="callout callout-key reveal">
+    <div class="callout-title">[!] Implementation Detail</div>
+    When the key operand has <strong>bit-length</strong> strictly smaller than the message, it is generally assumed that the it is repeated as many times as necessary to reach to correct length, the possible excess being ignored.
+  </div>
+
+  <div class="figure-container reveal">
+    <div class="figure-xor-ult">
+        <img src="assets/xor_ult.jpg" alt="Meme about XORing" style="max-height:500px">
+    </div>
+  </div>
+
+</section>
+
+<section id="caesar" class="lecture-section">
+  <div class="section-header">
+    <div class="section-number">Section 02</div>
+    <h2 class="section-title">Caesar Cipher and Frequency Analysis</h2>
+  </div>
+
+  <p>The Caesar Cipher is probably one of the oldest, most intuitive, and worst cipher that exists. Each letter is <em>shifted</em> by a fixed number <strong>$n$</strong>. Julius Caesar used a shift of 3: <br>A -> D, <br>B -> E, <br>C -> F...</p>
+
+  <div class="equation-box reveal">
+    <div class="equation-label">Caesar Encryption</div>
+    $$E(x) = (x + k) \mod 26$$
+    $$D(x) = (x - k) \mod 26$$
+  </div>
+
+  <p>The Caesar Cipher, due to its cyclic nature, can be represented as a wheel (below). In modern days, the Cipher is more known as <code>ROT-n</code>, with n being the shift value.<p>
+
+  <div class="callout callout-info reveal">
+    <div class="callout-title">[*] Fun fact</div>
+    Old forums had a habit of hiding "spoiler" messages using ROT-13. References to this habit can still be found in modern media.
+  </div>
+
+  <h3>Interactive Cipher Wheel</h3>
+  <div class="interactive-widget reveal" id="caesar-wheel">
+    <div class="widget-title">Caesar Cipher Wheel</div>
+    <div style="text-align:center;margin-bottom:1rem;">
+      <svg viewBox="0 0 300 300" width="260" height="260" xmlns="http://www.w3.org/2000/svg">
+        <!-- Inner ring (plaintext - fixed) -->
+        <circle cx="150" cy="150" r="90" fill="none" stroke="#7b61ff" stroke-width="2"/>
+        <text x="150.0" y="70.0" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">A</text>
+        <text x="169.1" y="72.3" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">B</text>
+        <text x="187.2" y="79.2" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">C</text>
+        <text x="203.0" y="90.1" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">D</text>
+        <text x="215.8" y="104.6" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">E</text>
+        <text x="224.8" y="121.6" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">F</text>
+        <text x="229.4" y="140.4" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">G</text>
+        <text x="229.4" y="159.6" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">H</text>
+        <text x="224.8" y="178.4" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">I</text>
+        <text x="215.8" y="195.4" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">J</text>
+        <text x="203.0" y="209.9" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">K</text>
+        <text x="187.2" y="220.8" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">L</text>
+        <text x="169.1" y="227.7" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">M</text>
+        <text x="150.0" y="230.0" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">N</text>
+        <text x="130.9" y="227.7" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">O</text>
+        <text x="112.8" y="220.8" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">P</text>
+        <text x="97.0" y="209.9" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">Q</text>
+        <text x="84.2" y="195.4" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">R</text>
+        <text x="75.2" y="178.4" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">S</text>
+        <text x="70.6" y="159.6" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">T</text>
+        <text x="70.6" y="140.4" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">U</text>
+        <text x="75.2" y="121.6" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">V</text>
+        <text x="84.2" y="104.6" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">W</text>
+        <text x="97.0" y="90.1" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">X</text>
+        <text x="112.8" y="79.2" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">Y</text>
+        <text x="130.9" y="72.3" text-anchor="middle" dominant-baseline="central" fill="#7b61ff" font-size="12" font-family="JetBrains Mono, monospace">Z</text>
+        <!-- Outer ring (ciphertext - rotates) -->
+        <circle cx="150" cy="150" r="120" fill="none" stroke="#00f0ff" stroke-width="2"/>
+        <g class="outer-ring">
+          <text x="150.0" y="40.0" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">A</text>
+          <text x="176.3" y="43.2" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">B</text>
+          <text x="201.1" y="52.6" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">C</text>
+          <text x="222.9" y="67.7" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">D</text>
+          <text x="240.5" y="87.5" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">E</text>
+          <text x="252.9" y="111.0" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">F</text>
+          <text x="259.2" y="136.7" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">G</text>
+          <text x="259.2" y="163.3" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">H</text>
+          <text x="252.9" y="189.0" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">I</text>
+          <text x="240.5" y="212.5" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">J</text>
+          <text x="222.9" y="232.3" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">K</text>
+          <text x="201.1" y="247.4" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">L</text>
+          <text x="176.3" y="256.8" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">M</text>
+          <text x="150.0" y="260.0" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">N</text>
+          <text x="123.7" y="256.8" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">O</text>
+          <text x="98.9" y="247.4" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">P</text>
+          <text x="77.1" y="232.3" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">Q</text>
+          <text x="59.5" y="212.5" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">R</text>
+          <text x="47.1" y="189.0" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">S</text>
+          <text x="40.8" y="163.3" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">T</text>
+          <text x="40.8" y="136.7" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">U</text>
+          <text x="47.1" y="111.0" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">V</text>
+          <text x="59.5" y="87.5" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">W</text>
+          <text x="77.1" y="67.7" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">X</text>
+          <text x="98.9" y="52.6" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">Y</text>
+          <text x="123.7" y="43.2" text-anchor="middle" dominant-baseline="central" fill="#00f0ff" font-size="12" font-family="JetBrains Mono, monospace" font-weight="bold">Z</text>
+        </g>
+        <text x="150" y="145" text-anchor="middle" fill="#4a5568" font-size="9" font-family="JetBrains Mono, monospace">INNER: plain</text>
+        <text x="150" y="160" text-anchor="middle" fill="#4a5568" font-size="9" font-family="JetBrains Mono, monospace">OUTER: cipher</text>
+      </svg>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <label class="text-muted" style="font-size:0.85rem">Shift (k):</label>
+      <input id="caesar-shift" type="range" min="0" max="25" value="3" style="flex:1;max-width:200px;accent-color:#00f0ff">
+      <span id="caesar-shift-label" class="text-cyan font-mono" style="font-size:1.3rem;min-width:30px;text-align:center">3</span>
+    </div>
+    <div style="text-align:center;margin-top:1rem;">
+      <div class="text-muted" style="font-size:0.75rem">HELLO WORLD -></div>
+      <div id="caesar-output" class="text-cyan font-mono" style="font-size:1.3rem;letter-spacing:2px;margin-top:0.3rem">KHOOR ZRUOG</div>
+    </div>
+  </div>
+
+  <h3>Exploit Vector: Frequency Analysis</h3>
+  <p>The Caesar cipher is known as a <strong>mono-alphabetic</strong> cipher: each letter always maps to the <strong>same</strong> ciphertext letter, and as such, the <em>frequency distribution</em> is preserved. In English, the letter "E" appears ~12.7% of the time. If we see a letter appearing ~12.7% in the ciphertext, we can deduce it is likely E!</p>
+
+  <div class="figure-container reveal">
+    <div class="figure-caption" style="margin-top:0;margin-bottom:0.8rem">English letter frequency distribution</div>
+    <div class="histogram" id="english-freq-bars">
+      <div class="bar" style="height:65.6px" title="A: 8.2%"><span class="bar-label">A</span></div>
+      <div class="bar" style="height:12.0px" title="B: 1.5%"><span class="bar-label">B</span></div>
+      <div class="bar" style="height:22.4px" title="C: 2.8%"><span class="bar-label">C</span></div>
+      <div class="bar" style="height:34.4px" title="D: 4.3%"><span class="bar-label">D</span></div>
+      <div class="bar" style="height:101.6px" title="E: 12.7%"><span class="bar-label">E</span></div>
+      <div class="bar" style="height:17.6px" title="F: 2.2%"><span class="bar-label">F</span></div>
+      <div class="bar" style="height:16.0px" title="G: 2.0%"><span class="bar-label">G</span></div>
+      <div class="bar" style="height:48.8px" title="H: 6.1%"><span class="bar-label">H</span></div>
+      <div class="bar" style="height:56.0px" title="I: 7.0%"><span class="bar-label">I</span></div>
+      <div class="bar" style="height:2.0px" title="J: 0.2%"><span class="bar-label">J</span></div>
+      <div class="bar" style="height:6.4px" title="K: 0.8%"><span class="bar-label">K</span></div>
+      <div class="bar" style="height:32.0px" title="L: 4.0%"><span class="bar-label">L</span></div>
+      <div class="bar" style="height:19.2px" title="M: 2.4%"><span class="bar-label">M</span></div>
+      <div class="bar" style="height:53.6px" title="N: 6.7%"><span class="bar-label">N</span></div>
+      <div class="bar" style="height:60.0px" title="O: 7.5%"><span class="bar-label">O</span></div>
+      <div class="bar" style="height:15.2px" title="P: 1.9%"><span class="bar-label">P</span></div>
+      <div class="bar" style="height:2.0px" title="Q: 0.1%"><span class="bar-label">Q</span></div>
+      <div class="bar" style="height:48.0px" title="R: 6.0%"><span class="bar-label">R</span></div>
+      <div class="bar" style="height:50.4px" title="S: 6.3%"><span class="bar-label">S</span></div>
+      <div class="bar" style="height:72.8px" title="T: 9.1%"><span class="bar-label">T</span></div>
+      <div class="bar" style="height:22.4px" title="U: 2.8%"><span class="bar-label">U</span></div>
+      <div class="bar" style="height:8.0px" title="V: 1.0%"><span class="bar-label">V</span></div>
+      <div class="bar" style="height:18.4px" title="W: 2.3%"><span class="bar-label">W</span></div>
+      <div class="bar" style="height:2.0px" title="X: 0.2%"><span class="bar-label">X</span></div>
+      <div class="bar" style="height:16.0px" title="Y: 2.0%"><span class="bar-label">Y</span></div>
+      <div class="bar" style="height:2.0px" title="Z: 0.1%"><span class="bar-label">Z</span></div>
+    </div>
+  </div>
+
+  <div class="callout callout-warning reveal">
+    <div class="callout-title">[!] Weakness</div>
+    <strong>Any mono-alphabetic substitution cipher</strong> (not just Caesar) is vulnerable to frequency analysis. The Caesar Cipher however is especially weak: the key space (number of different values the secret key can be) is $\leq 26$, trivially brute-forceable!
+  </div>
+
+  <div class="figure-container reveal">
+    <div class="figure-caesar">
+        <img src="assets/caesar.jpg" alt="2017 meme" style="max-height:500px">
+    </div>
+  </div>
+
+  <!-- Mini-challenge -->
+  <div class="challenge-card reveal" data-answer="HELLO" data-type="exact">
+    <div class="challenge-badge">[?] Mini-Challenge</div>
+    <div class="challenge-prompt">The ciphertext below was encrypted with ROT-13. What is the plaintext?<br><code class="text-cyan" style="font-size:1.1rem;letter-spacing:2px">URYYB</code></div>
+    <div class="challenge-input-group">
+      <input class="challenge-input" placeholder="Type plaintext here..." maxlength="20">
+      <button class="btn btn-check">Check</button>
+      <button class="btn btn-hint">Hint</button>
+    </div>
+    <div class="challenge-feedback"></div>
+    <div class="challenge-hint">ROT-13 shifts each letter by 13 positions. U->H, R->E, Y->L...</div>
+  </div>
+</section>
+
+<section id="vigenere" class="lecture-section">
+  <div class="section-header">
+    <div class="section-number">Section 03</div>
+    <h2 class="section-title">Vigenere Cipher and Kasiski Test</h2>
+  </div>
+
+  <p>The Vigenere cipher improves on Caesar by using a <em>keyword</em> instead of a single shift. Each letter of the plaintext is shifted by the corresponding letter of the key (repeated as many times as needed).</p>
+
+  <div class="equation-box reveal">
+    <div class="equation-label">Vigenere Encryption</div>
+    $$C_i = (P_i + K_{i \bmod |K|}) \mod 26$$
+  </div>
+
+  <h3>Step-by-Step Animation</h3>
+  <div class="step-container reveal" id="vigenere-anim">
+    <div class="step-controls">
+      <button class="btn btn-step btn-step-next" onclick="
+        const tbl = this.closest('.step-container').querySelector('table');
+        const cells = tbl.querySelectorAll('.vig-result');
+        const keyRow = tbl.querySelectorAll('.vig-key');
+        const pt = 'ATTACKATDAWN';
+        const key = 'LEMON';
+        for (let i = 0; i < cells.length; i++) {
+          if (!cells[i].textContent) {
+            const p = pt.charCodeAt(i) - 65;
+            const k = key.charCodeAt(i % key.length) - 65;
+            cells[i].textContent = String.fromCharCode((p + k) % 26 + 65);
+            cells[i].style.animation = 'fadeSlideIn 0.4s ease';
+            keyRow[i].style.color = 'var(--cyan)';
+            break;
+          }
+        }
+      > Next Letter</button>
+      <button class="btn btn-reset" onclick="
+        this.closest('.step-container').querySelectorAll('.vig-result').forEach(c => {c.textContent=''; c.style.animation='';});
+        this.closest('.step-container').querySelectorAll('.vig-key').forEach(c => c.style.color='');
+      ">Next Letter</button> <!-- Stuff's broken (this is supposed to be "reset", idk why its not). Too bad im not fixing it -->
+    </div>
+    <div style="overflow-x:auto">
+      <table class="styled-table" style="text-align:center">
+        <tr><th>Position</th><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td></tr>
+        <tr><th>Plaintext</th><td>A</td><td>T</td><td>T</td><td>A</td><td>C</td><td>K</td><td>A</td><td>T</td><td>D</td><td>A</td><td>W</td><td>N</td></tr>
+        <tr><th>Key</th>
+          <td class="vig-key text-purple">L</td><td class="vig-key text-purple">E</td><td class="vig-key text-purple">M</td><td class="vig-key text-purple">O</td><td class="vig-key text-purple">N</td>
+          <td class="vig-key text-purple">L</td><td class="vig-key text-purple">E</td><td class="vig-key text-purple">M</td><td class="vig-key text-purple">O</td><td class="vig-key text-purple">N</td>
+          <td class="vig-key text-purple">L</td><td class="vig-key text-purple">E</td>
+        </tr>
+        <tr><th>Ciphertext</th>
+          <td class="vig-result text-pink font-mono" style="font-weight:700"></td>
+          <td class="vig-result text-pink font-mono" style="font-weight:700"></td>
+          <td class="vig-result text-pink font-mono" style="font-weight:700"></td>
+          <td class="vig-result text-pink font-mono" style="font-weight:700"></td>
+          <td class="vig-result text-pink font-mono" style="font-weight:700"></td>
+          <td class="vig-result text-pink font-mono" style="font-weight:700"></td>
+          <td class="vig-result text-pink font-mono" style="font-weight:700"></td>
+          <td class="vig-result text-pink font-mono" style="font-weight:700"></td>
+          <td class="vig-result text-pink font-mono" style="font-weight:700"></td>
+          <td class="vig-result text-pink font-mono" style="font-weight:700"></td>
+          <td class="vig-result text-pink font-mono" style="font-weight:700"></td>
+          <td class="vig-result text-pink font-mono" style="font-weight:700"></td>
+        </tr>
+      </table>
+    </div>
+    <div class="figure-caption">Key "LEMON" repeats over the plaintext, each letter gets a different shift</div>
+  </div>
+
+  <p>Any letter of the ciphertext is the result of both the length of the key and letter of the original message. As such, two same letters of the plaintext do not necessarily produce the same output:<strong>simple frequency analysis fails</strong></p>
+
+  <h3>Attack Vector: Kasiski Test</h3>
+  <p>But Vigenere isn't unbreakable (at least not since the 1850s). If the <em>same plaintext sequence</em> aligns with the <em>same key position</em>, it produces identical ciphertext: the function is <em>isomorphic</em>. The <strong>Kasiski test</strong> finds these repeats:</p>
+
+  <div class="figure-container reveal">
+    <svg viewBox="0 0 600 180" xmlns="http://www.w3.org/2000/svg" style="max-width:580px">
+      <!-- Ciphertext with highlighted repeats -->
+      <text x="20" y="30" fill="#8892a4" font-size="11" font-family="JetBrains Mono, monospace">Ciphertext:</text>
+      <text x="20" y="60" fill="#e0e6f0" font-size="14" font-family="JetBrains Mono, monospace">
+        L X F <tspan fill="#ff2d6b" font-weight="bold">O P V</tspan> E F R N <tspan fill="#ff2d6b" font-weight="bold">O P V</tspan> H R
+      </text>
+      <!-- Arrows showing distance -->
+      <line x1="75" y1="70" x2="75" y2="90" stroke="#ff2d6b" stroke-width="1.5"/>
+      <line x1="75" y1="90" x2="190" y2="90" stroke="#ff2d6b" stroke-width="1.5" stroke-dasharray="4,3">
+        <animate attributeName="stroke-dashoffset" from="0" to="-14" dur="1s" repeatCount="indefinite"/>
+      </line>
+      <line x1="190" y1="90" x2="190" y2="70" stroke="#ff2d6b" stroke-width="1.5"/>
+      <text x="132.5" y="108" text-anchor="middle" fill="#ff2d6b" font-size="11" font-family="JetBrains Mono, monospace">distance = 7</text>
+
+      <!-- Explanation -->
+      <text x="20" y="138" fill="#8892a4" font-size="11" font-family="JetBrains Mono, monospace">Repeated trigram "OPV" appears at positions 4 and 13</text>
+      <text x="20" y="158" fill="#00f0ff" font-size="11" font-family="JetBrains Mono, monospace">Distance = 9 -> key length divides 7 (this is just a made up example)</text>
+    </svg>
+  </div>
+
+  <div class="callout callout-info reveal">
+    <div class="callout-title">[*] Attack Strategy</div>
+    <ol style="margin:0.5rem 0 0 1.2rem;color:var(--text-secondary);font-size:0.88rem">
+      <li>Find repeated sequences in the ciphertext</li>
+      <li>Compute GCD $n$ of all distances -> probable key length</li>
+      <li>Split ciphertext into groups (one per key position)</li>
+      <li>Apply frequency analysis on each group independently / Bruteforce keys is $n$ is small enough</li>
+    </ol>
+  </div>
+
+  <div class="challenge-card reveal" data-answer="FOZ" data-type="exact">
+    <div class="challenge-badge">[?] Mini-Challenge</div>
+    <div class="challenge-prompt">Encrypt the plaintext <code>CAT</code> using Vigenere with key <code>DOG</code>.<br><span class="text-muted" style="font-size:0.82rem">Remember: C_i = (P_i + K_i) mod 26, where A=0, B=1, ... Z=25</span></div>
+    <div class="challenge-input-group">
+      <input class="challenge-input" placeholder="Enter the ciphertext..." maxlength="10">
+      <button class="btn btn-check">Check</button>
+      <button class="btn btn-hint">Hint</button>
+    </div>
+    <div class="challenge-feedback"></div>
+    <div class="challenge-hint">C(2)+D(3)=F(5), A(0)+O(14)=O(14), T(19)+G(6)=Z(25). The ciphertext is three letters.</div>
+  </div>
+</section>
+
+<section id="otp" class="lecture-section">
+  <div class="section-header">
+    <div class="section-number">Section 04</div>
+    <h2 class="section-title">One-Time Pad (OTP)</h2>
+  </div>
+
+  <p>The weakness of Vigenere was the <em>short, repeating key</em>. What if we make the key <strong>as long as the message itself</strong>, thus never re-using it?</p> Well, you get the <em>OTP Cipher</em>, which now resists frequency analysis and key patterns. The message is now as secure as the key is.
+
+  <div class="comparison-row reveal">
+    <div class="comparison-item">
+      <h4 class="text-orange" style="margin-top:0">Vigenere (short key)</h4>
+      <div class="font-mono" style="font-size:0.82rem;line-height:1.8">
+        <div>Plaintext: <span class="text-primary">ATTACKATDAWN</span></div>
+        <div>Key:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="text-purple">LEMONLEMONLE</span></div>
+        <div class="text-muted">^ key repeats -> pattern leaks</div>
+      </div>
+    </div>
+    <div class="comparison-item">
+      <h4 class="text-green" style="margin-top:0">OTP (full-length key)</h4>
+      <div class="font-mono" style="font-size:0.82rem;line-height:1.8">
+        <div>Plaintext: <span class="text-primary">ATTACKATDAWN</span></div>
+        <div>Key:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span class="text-cyan">XMCKPQSUATBG</span></div>
+        <div class="text-muted">^ truly random, same length -> no attack vectors</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="equation-box reveal">
+    <div class="equation-label">One-Time Pad</div>
+    $$C_i = P_i \oplus K_i \quad\text{where}\quad |K| = |P|$$
+    <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem">Key K is truly random and used exactly once</div>
+  </div>
+
+  <div class="figure-container reveal">
+    <svg viewBox="0 0 500 120" xmlns="http://www.w3.org/2000/svg" style="max-width:480px">
+      <rect x="10" y="35" width="120" height="50" rx="8" fill="#131a2b" stroke="#00f0ff" stroke-width="1.5"/>
+      <text x="70" y="55" text-anchor="middle" fill="#00f0ff" font-size="10" font-family="JetBrains Mono">MESSAGE</text>
+      <text x="70" y="72" text-anchor="middle" fill="#e0e6f0" font-size="12" font-family="JetBrains Mono">01001000</text>
+
+      <text x="175" y="65" text-anchor="middle" fill="#7b61ff" font-size="14" font-weight="bold" font-family="JetBrains Mono">XOR</text>
+
+      <rect x="210" y="35" width="120" height="50" rx="8" fill="#131a2b" stroke="#7b61ff" stroke-width="1.5"/>
+      <text x="270" y="55" text-anchor="middle" fill="#7b61ff" font-size="10" font-family="JetBrains Mono">RANDOM KEY</text>
+      <text x="270" y="72" text-anchor="middle" fill="#e0e6f0" font-size="12" font-family="JetBrains Mono">11010110</text>
+
+      <text x="375" y="65" text-anchor="middle" fill="#ff2d6b" font-size="22" font-weight="bold">=</text>
+
+      <rect x="400" y="35" width="90" height="50" rx="8" fill="#131a2b" stroke="#ff2d6b" stroke-width="1.5"/>
+      <text x="445" y="55" text-anchor="middle" fill="#ff2d6b" font-size="10" font-family="JetBrains Mono">CIPHER</text>
+      <text x="445" y="72" text-anchor="middle" fill="#e0e6f0" font-size="12" font-family="JetBrains Mono">10011110</text>
+    </svg>
+  </div>
+
+  <div class="callout callout-key reveal">
+    <div class="callout-title">[!] Information-Theoretic Security</div>
+    The OTP has been <strong>mathematically proven</strong> to be unbreakable (Shannon, 1949). Given any ciphertext, <em>every possible plaintext is equally likely</em> without the key. It's the gold standard of encryption.
+  </div>
+
+  <div class="callout callout-warning reveal">
+    <div class="callout-title">[!] The Catch</div>
+    <ul style="margin:0.3rem 0 0 1rem;color:var(--text-secondary);font-size:0.88rem">
+      <li>Key must be <strong>truly random</strong> (not pseudorandom)</li>
+      <li>Key must be <strong>at least as long</strong> as the message</li>
+      <li>Key must <strong>never be reused</strong></li>
+      <li>Key must be generated over a charset <strong>superset of the key's</strong>
+      <li>Key must be <strong>shared securely</strong></li>
+    </ul>
+    ... wait a second. For the procedure to work, the key must be shared securely. But if the key can be shared securely, why not share the message directly?
+  </div>
+
+  <p>Despite the theoretical security of the OTP, it remains <em>very hard to implement</em> on its own due to the assumption of mutual key knowledge between pairs.</p>
+</section>
+
+<section id="aes" class="lecture-section">
+  <div class="section-header">
+    <div class="section-number">Section 05</div>
+    <h2 class="section-title">AES - Symmetric Encryption</h2>
+  </div>
+
+  <p>OTP is impractical, but brings a good theoretical framework to introduce <strong>symmetric-key ciphers</strong>, which expand a short key into secure encryption. <em>AES</em> (Advanced Encryption Standard) is the modern standard, used pretty much everywhere from HTTPS to disk encryption.</p>
+
+  <div class="figure-container reveal">
+    <svg viewBox="0 0 400 80" xmlns="http://www.w3.org/2000/svg" style="max-width:380px">
+      <rect x="10" y="20" width="90" height="40" rx="6" fill="#131a2b" stroke="#00f0ff" stroke-width="1.5"/>
+      <text x="55" y="45" text-anchor="middle" fill="#00f0ff" font-size="11" font-family="JetBrains Mono">Plaintext</text>
+      <text x="130" y="45" fill="#4a5568" font-size="14" font-family="JetBrains Mono">-></text>
+      <rect x="150" y="10" width="100" height="60" rx="8" fill="#1a1040" stroke="#7b61ff" stroke-width="2"/>
+      <text x="200" y="35" text-anchor="middle" fill="#7b61ff" font-size="12" font-family="JetBrains Mono" font-weight="bold">AES</text>
+      <text x="200" y="52" text-anchor="middle" fill="#4a5568" font-size="9" font-family="JetBrains Mono">Key</text>
+      <text x="280" y="45" fill="#4a5568" font-size="14" font-family="JetBrains Mono">-></text>
+      <rect x="300" y="20" width="90" height="40" rx="6" fill="#131a2b" stroke="#ff2d6b" stroke-width="1.5"/>
+      <text x="345" y="45" text-anchor="middle" fill="#ff2d6b" font-size="11" font-family="JetBrains Mono">Ciphertext</text>
+    </svg>
+    <div class="figure-caption">AES is said to be symmetric: the same key encrypts and decrypts. Think of it like a "lock" being opened and closed.</div>
+  </div>
+
+  <div class="callout callout-info reveal">
+    <div class="callout-title">[*] Shannon's Principles</div>
+    To prevent statistical analysis of symmetrical ciphers, two principles are applied: <br><br>
+
+    <strong>Confusion:</strong> each part of ciphertext should depend on <em>several parts of the key</em>, making the relationship between key and ciphertext complex. Any <strong>small change in the key</strong> results in considerable changes of the ciphertext.<br><br>
+
+    <strong>Diffusion:</strong> changing a single plaintext bit should affect <em>many</em> ciphertext bits, spreading the input's statistical structure across the output. Any <strong>small change in the plaintext</strong> results in considerable changes of the ciphertext.
+  </div>
+
+  <h3>AES Round - 4 Steps</h3>
+  <p>AES processes data in blocks of fixed bit size. Each round applies <strong>4 transformations</strong>. AES-128 uses 10 rounds over 128-bit blocks.</p>
+
+  <div class="interactive-widget reveal" id="aes-round-anim">
+    <div class="widget-title">AES Round</div>
+    <button class="btn btn-step" style="margin-bottom:1rem">> Next Step</button>
+    <div class="aes-round">
+      <div class="aes-step aes-step-sub">
+        <div style="font-size:1.2rem;margin-bottom:0.3rem">1. SubBytes <span class="text-muted" style="font-size:0.8rem">(confusion)</span></div>
+        <div style="font-size:0.78rem;font-weight:400;color:var(--text-secondary)">Each byte replaced via a lookup table (S-Box) - adds <strong>non-linearity</strong></div>
+        <div class="font-mono" style="font-size:0.72rem;color:var(--text-muted);margin-top:0.4rem;background:var(--bg-primary);padding:0.4rem;border-radius:4px;">byte 0x53 -> S-Box[5][3] = 0xED</div>
+      </div>
+      <div class="aes-arrow">|</div>
+      <div class="aes-step aes-step-shift">
+        <div style="font-size:1.2rem;margin-bottom:0.3rem">2. ShiftRows <span class="text-muted" style="font-size:0.8rem">(diffusion)</span></div>
+        <div style="font-size:0.78rem;font-weight:400;color:var(--text-secondary)">Rows of the state matrix are cyclically shifted left</div>
+        <div class="font-mono" style="font-size:0.72rem;color:var(--text-muted);margin-top:0.4rem;background:var(--bg-primary);padding:0.4rem;border-radius:4px;">Row 0: no shift | Row 1: shift 1 | Row 2: shift 2 | Row 3: shift 3</div>
+      </div>
+      <div class="aes-arrow">|</div>
+      <div class="aes-step aes-step-mix">
+        <div style="font-size:1.2rem;margin-bottom:0.3rem">3. MixColumns <span class="text-muted" style="font-size:0.8rem">(diffusion)</span></div>
+        <div style="font-size:0.78rem;font-weight:400;color:var(--text-secondary)">Columns mixed via matrix multiplication in GF(2^8) - each output byte depends on all 4 input bytes</div>
+      </div>
+      <div class="aes-arrow">|</div>
+      <div class="aes-step aes-step-add">
+        <div style="font-size:1.2rem;margin-bottom:0.3rem">4. AddRoundKey <span class="text-muted" style="font-size:0.8rem">(key mixing)</span></div>
+        <div style="font-size:0.78rem;font-weight:400;color:var(--text-secondary)">XOR state with the round key derived from the main key</div>
+        <div class="font-mono" style="font-size:0.72rem;color:var(--text-muted);margin-top:0.4rem;background:var(--bg-primary);padding:0.4rem;border-radius:4px;">state[i] = state[i] XOR roundKey[i] for each byte</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>ECB vs CBC Modes</h3>
+  <p>We now know that AES encrypts using fixed sized blocks, but how do we handle messages longer than that size? That's where <em>modes of operation</em> come in.</p>
+
+  <div class="comparison-row reveal">
+    <div class="comparison-item">
+      <h4 class="text-orange" style="margin-top:0">ECB - Electronic Codebook</h4>
+      <svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg" style="max-width:260px">
+        <!-- Block 1 -->
+        <rect x="10" y="10" width="60" height="30" rx="4" fill="#131a2b" stroke="#00f0ff" stroke-width="1"/>
+        <text x="40" y="30" text-anchor="middle" fill="#00f0ff" font-size="9" font-family="JetBrains Mono">Block 1</text>
+        <text x="40" y="55" fill="#4a5568" font-size="12">v</text>
+        <rect x="10" y="60" width="60" height="25" rx="4" fill="#1a1040" stroke="#7b61ff" stroke-width="1"/>
+        <text x="40" y="77" text-anchor="middle" fill="#7b61ff" font-size="8" font-family="JetBrains Mono">AES Key</text>
+        <text x="40" y="100" fill="#4a5568" font-size="12">v</text>
+        <rect x="10" y="105" width="60" height="30" rx="4" fill="#131a2b" stroke="#ff2d6b" stroke-width="1"/>
+        <text x="40" y="125" text-anchor="middle" fill="#ff2d6b" font-size="9" font-family="JetBrains Mono">Cipher 1</text>
+        <!-- Block 2 -->
+        <rect x="110" y="10" width="60" height="30" rx="4" fill="#131a2b" stroke="#00f0ff" stroke-width="1"/>
+        <text x="140" y="30" text-anchor="middle" fill="#00f0ff" font-size="9" font-family="JetBrains Mono">Block 2</text>
+        <text x="140" y="55" fill="#4a5568" font-size="12">v</text>
+        <rect x="110" y="60" width="60" height="25" rx="4" fill="#1a1040" stroke="#7b61ff" stroke-width="1"/>
+        <text x="140" y="77" text-anchor="middle" fill="#7b61ff" font-size="8" font-family="JetBrains Mono">AES Key</text>
+        <text x="140" y="100" fill="#4a5568" font-size="12">v</text>
+        <rect x="110" y="105" width="60" height="30" rx="4" fill="#131a2b" stroke="#ff2d6b" stroke-width="1"/>
+        <text x="140" y="125" text-anchor="middle" fill="#ff2d6b" font-size="9" font-family="JetBrains Mono">Cipher 2</text>
+        <!-- Block 3 -->
+        <rect x="210" y="10" width="60" height="30" rx="4" fill="#131a2b" stroke="#00f0ff" stroke-width="1"/>
+        <text x="240" y="30" text-anchor="middle" fill="#00f0ff" font-size="9" font-family="JetBrains Mono">Block 3</text>
+        <text x="240" y="55" fill="#4a5568" font-size="12">v</text>
+        <rect x="210" y="60" width="60" height="25" rx="4" fill="#1a1040" stroke="#7b61ff" stroke-width="1"/>
+        <text x="240" y="77" text-anchor="middle" fill="#7b61ff" font-size="8" font-family="JetBrains Mono">AES Key</text>
+        <text x="240" y="100" fill="#4a5568" font-size="12">v</text>
+        <rect x="210" y="105" width="60" height="30" rx="4" fill="#131a2b" stroke="#ff2d6b" stroke-width="1"/>
+        <text x="240" y="125" text-anchor="middle" fill="#ff2d6b" font-size="9" font-family="JetBrains Mono">Cipher 3</text>
+        <text x="140" y="155" text-anchor="middle" fill="#fc392b" font-size="9" font-family="JetBrains Mono">[/!\] Each block independent</text>
+      </svg>
+    </div>
+    <div class="comparison-item">
+      <h4 class="text-green" style="margin-top:0">CBC - Cipher Block Chaining</h4>
+      <svg viewBox="0 0 280 160" xmlns="http://www.w3.org/2000/svg" style="max-width:260px">
+        <defs><marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#ff2d6b"/></marker></defs>
+        <!-- IV -->
+        <rect x="10" y="5" width="40" height="20" rx="3" fill="#131a2b" stroke="#00ff88" stroke-width="1"/>
+        <text x="30" y="18" text-anchor="middle" fill="#00ff88" font-size="7" font-family="JetBrains Mono">IV</text>
+        <!-- Block 1 with XOR -->
+        <rect x="10" y="30" width="60" height="20" rx="3" fill="#131a2b" stroke="#00f0ff" stroke-width="1"/>
+        <text x="40" y="44" text-anchor="middle" fill="#00f0ff" font-size="8" font-family="JetBrains Mono">Block 1</text>
+        <text x="55" y="25" fill="#7b61ff" font-size="7" font-weight="bold" font-family="JetBrains Mono">XOR</text>
+        <text x="40" y="63" fill="#4a5568" font-size="10">v</text>
+        <rect x="10" y="68" width="60" height="20" rx="3" fill="#1a1040" stroke="#7b61ff" stroke-width="1"/>
+        <text x="40" y="82" text-anchor="middle" fill="#7b61ff" font-size="7" font-family="JetBrains Mono">AES Key</text>
+        <text x="40" y="100" fill="#4a5568" font-size="10">v</text>
+        <rect x="10" y="105" width="60" height="20" rx="3" fill="#131a2b" stroke="#ff2d6b" stroke-width="1"/>
+        <text x="40" y="119" text-anchor="middle" fill="#ff2d6b" font-size="8" font-family="JetBrains Mono">Cipher 1</text>
+        <!-- Chain arrow -->
+        <path d="M70 115 L85 115 L85 28 L100 28" fill="none" stroke="#ff2d6b" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+        <!-- Block 2 -->
+        <rect x="100" y="30" width="60" height="20" rx="3" fill="#131a2b" stroke="#00f0ff" stroke-width="1"/>
+        <text x="130" y="44" text-anchor="middle" fill="#00f0ff" font-size="8" font-family="JetBrains Mono">Block 2</text>
+        <text x="145" y="25" fill="#7b61ff" font-size="7" font-weight="bold" font-family="JetBrains Mono">XOR</text>
+        <text x="130" y="63" fill="#4a5568" font-size="10">v</text>
+        <rect x="100" y="68" width="60" height="20" rx="3" fill="#1a1040" stroke="#7b61ff" stroke-width="1"/>
+        <text x="130" y="82" text-anchor="middle" fill="#7b61ff" font-size="7" font-family="JetBrains Mono">AES Key</text>
+        <text x="130" y="100" fill="#4a5568" font-size="10">v</text>
+        <rect x="100" y="105" width="60" height="20" rx="3" fill="#131a2b" stroke="#ff2d6b" stroke-width="1"/>
+        <text x="130" y="119" text-anchor="middle" fill="#ff2d6b" font-size="8" font-family="JetBrains Mono">Cipher 2</text>
+        <!-- Chain arrow 2 -->
+        <path d="M160 115 L175 115 L175 28 L190 28" fill="none" stroke="#ff2d6b" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+        <!-- Block 3 -->
+        <rect x="190" y="30" width="60" height="20" rx="3" fill="#131a2b" stroke="#00f0ff" stroke-width="1"/>
+        <text x="220" y="44" text-anchor="middle" fill="#00f0ff" font-size="8" font-family="JetBrains Mono">Block 3</text>
+        <text x="235" y="25" fill="#7b61ff" font-size="7" font-weight="bold" font-family="JetBrains Mono">XOR</text>
+        <text x="220" y="63" fill="#4a5568" font-size="10">v</text>
+        <rect x="190" y="68" width="60" height="20" rx="3" fill="#1a1040" stroke="#7b61ff" stroke-width="1"/>
+        <text x="220" y="82" text-anchor="middle" fill="#7b61ff" font-size="7" font-family="JetBrains Mono">AES Key</text>
+        <text x="220" y="100" fill="#4a5568" font-size="10">v</text>
+        <rect x="190" y="105" width="60" height="20" rx="3" fill="#131a2b" stroke="#ff2d6b" stroke-width="1"/>
+        <text x="220" y="119" text-anchor="middle" fill="#ff2d6b" font-size="8" font-family="JetBrains Mono">Cipher 3</text>
+        <text x="140" y="150" text-anchor="middle" fill="#00ff88" font-size="9" font-family="JetBrains Mono">[ok] Blocks chained via XOR</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Spillage is lickage</h3>
+  <p>ECB encrypts identical plaintext blocks to identical ciphertext blocks. This means <strong>patterns in the plaintext are visible in the ciphertext</strong>:</p>
+
+  <div class="figure-container reveal">
+    <div class="ecb-demo">
+      <div class="ecb-demo-item">
+        <img src="assets/cyber.jpg" alt="Original Image" style="max-height:200px;image-rendering:pixelated">
+        <div class="demo-label">Original</div>
+      </div>
+      <div class="ecb-demo-item">
+        <img src="assets/cyber_ecb.jpg" alt="ECB encrypted" style="max-height:200px;image-rendering:pixelated">
+        <div class="demo-label">ECB Mode</div>
+      </div>
+      <div class="ecb-demo-item">
+        <img src="assets/cyber_cbc.jpg" alt="CBC encrypted" style="max-height:200px;image-rendering:pixelated">
+        <div class="demo-label">CBC Mode</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="aes-pitfalls" class="lecture-section">
+  <div class="section-header">
+    <div class="section-number">Section 06</div>
+    <h2 class="section-title">AES CTF Pitfalls</h2>
+  </div>
+
+  <p>In CTF challenges, AES implementations often have <em>deliberate weaknesses</em>. Below is a list of the most common ones to look for. Since this is an introduction, we will not go over each of these, but you are greatly encouraged to do so during your own time :p</p>
+
+  <div class="pitfall-grid reveal">
+    <div class="pitfall-card">
+      <div class="pitfall-icon">1.</div>
+      <div class="pitfall-name">ECB Mode</div>
+      <div class="pitfall-desc">Identical plaintext blocks -> identical ciphertext blocks. Swap, duplicate, or analyze blocks to break the scheme.</div>
+    </div>
+    <div class="pitfall-card">
+      <div class="pitfall-icon">2.</div>
+      <div class="pitfall-name">IV Reuse (CBC)</div>
+      <div class="pitfall-desc">Reusing the initialization vector with the same key leaks XOR of two plaintexts: $C_1 \oplus C_2 = P_1 \oplus P_2$</div>
+    </div>
+    <div class="pitfall-card">
+      <div class="pitfall-icon">3.</div>
+      <div class="pitfall-name">Padding Oracle</div>
+      <div class="pitfall-desc">Server reveals whether padding is valid/invalid. By manipulating ciphertext bytes, decrypt block by block without the key.</div>
+    </div>
+    <div class="pitfall-card">
+      <div class="pitfall-icon">4.</div>
+      <div class="pitfall-name">Bit Flipping (CBC/CTR)</div>
+      <div class="pitfall-desc">Flipping bit $i$ in ciphertext block $n$ flips the same bit in plaintext block $n+1$. This allows to modify data without knowing the key and produce valid ciphers without knowledge of the key.</div>
+    </div>
+    <div class="pitfall-card">
+      <div class="pitfall-icon">5.</div>
+      <div class="pitfall-name">Weak Key Derivation</div>
+      <div class="pitfall-desc">Key derived from short password, timestamp, or predictable seed. Brute-force the key space instead of attacking AES itself.</div>
+    </div>
+    <div class="pitfall-card">
+      <div class="pitfall-icon">6.</div>
+      <div class="pitfall-name">Known Plaintext</div>
+      <div class="pitfall-desc">If you know part of the plaintext (usually headers or file magic bytes), use it to recover key material or attack the mode.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-info reveal">
+    <div class="callout-title">[!] CTF Tip</div>
+    When you see AES in a CTF, first identify the <strong>mode</strong> (ECB/CBC/CTR/GCM...) and look for implementation mistakes.
+    If the implementation and/or mode are custom, think about what has changed compared to a known mode, and what this could imply!
+  </div>
+
+  <div class="callout callout-info reveal">
+    <div class="callout-title">[*] Fun fact</div>
+    The attack vector <em>6.</em> is close to what was used by Alan Turing and his team during WW2 to break the enigma machine! In this context, small knowledge of the plaintext drastically reduces the entropy of the cipher.
+  </div>
+
+</section>
+
+<section id="asymmetric" class="lecture-section">
+  <div class="section-header">
+    <div class="section-number">Section 07</div>
+    <h2 class="section-title">The Key Sharing Problem... again</h2>
+  </div>
+
+  <h3>The Problem</h3>
+  <p>Symmetric encryption, much like OTP, works great! Efficient and secure designs which work over keys of regular size, but only <em>if both parties already share a key</em>. But how does Alice send Bob the key in the first place?</p>
+
+  <div class="figure-container reveal">
+    <svg viewBox="0 0 500 150" xmlns="http://www.w3.org/2000/svg" style="max-width:480px">
+      <circle cx="70" cy="70" r="30" fill="#131a2b" stroke="#00f0ff" stroke-width="2"/>
+      <text x="70" y="63" text-anchor="middle" fill="#00f0ff" font-size="14" font-family="JetBrains Mono" font-weight="bold">A</text>
+      <text x="70" y="82" text-anchor="middle" fill="#00f0ff" font-size="9" font-family="JetBrains Mono">Alice</text>
+      <circle cx="430" cy="70" r="30" fill="#131a2b" stroke="#00f0ff" stroke-width="2"/>
+      <text x="430" y="63" text-anchor="middle" fill="#00f0ff" font-size="14" font-family="JetBrains Mono" font-weight="bold">B</text>
+      <text x="430" y="82" text-anchor="middle" fill="#00f0ff" font-size="9" font-family="JetBrains Mono">Bob</text>
+      <!-- Key with question mark -->
+      <rect x="200" y="45" width="100" height="50" rx="8" fill="#131a2b" stroke="#ff9f43" stroke-width="2" stroke-dasharray="5,3"/>
+      <text x="250" y="67" text-anchor="middle" fill="#ff9f43" font-size="14" font-family="JetBrains Mono">Key ???</text>
+      <text x="250" y="85" text-anchor="middle" fill="#ff9f43" font-size="10" font-family="JetBrains Mono">How to share?</text>
+      <!-- Arrows -->
+      <line x1="100" y1="70" x2="200" y2="70" stroke="#4a5568" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <line x1="300" y1="70" x2="400" y2="70" stroke="#4a5568" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <!-- Eve -->
+      <circle cx="250" cy="135" r="20" fill="#131a2b" stroke="#ff2d6b" stroke-width="1.5"/>
+      <text x="250" y="133" text-anchor="middle" fill="#ff2d6b" font-size="14" font-family="JetBrains Mono" font-weight="bold">E</text>
+      <line x1="250" y1="115" x2="250" y2="95" stroke="#ff2d6b" stroke-width="1" stroke-dasharray="3,2"/>
+    </svg>
+    <div class="figure-caption">Sending a key over an open channel defeats the purpose, since it becomes public knowledge instantly. Encrypting the key using another call to a symmetric cipher results in the same problem, but with a different key now.</div>
+  </div>
+
+  <h3>The Lockbox Analogy</h3>
+  <p>Let's go back to the previous <em>lockbox analogy</em>. Except now, instead of using the same padlock, we follow a different protocol:</p>
+  <ul style="margin:0.3rem 0 0 1rem;color:var(--text-primary);font-size:0.88rem">
+      <li>Bob generates both his own personal <em>private key</em> and <em>public padlock</em></li>
+      <li>Bob can safely send the padlock over an open channel to Alice: the padlock <strong>locks only</strong></li>
+      <li>Alice uses <em>Bob's padlock</em> to secure the box in which she hid a message</li>
+      <li>The box with the message being secured, it can be safely shared over an open channel</li>
+      <li><em>Only Bob</em> has access to the key, so only he can open the locked box</li>
+  </ul>
+
+  <div class="callout callout-key reveal">
+    <div class="callout-title">[!] Key Insight</div>
+    <strong>Asymmetrical Ciphers use two keys:</strong> a <em class="text-green">public key</em> (which can be shared freely) and a <em class="text-pink">private key</em> (which is kept secret). Knowing the public key does <strong>not</strong> reveal the private key, and only serves to encrypt data.
+  </div>
+
+</section>
+
+<section id="rsa" class="lecture-section">
+  <div class="section-header">
+    <div class="section-number">Section 08</div>
+    <h2 class="section-title">RSA</h2>
+  </div>
+
+  <div class="figure-container reveal">
+    <div class="figure-rsa-meme">
+        <img src="assets/asy.jpeg" alt="RSA/DSA meme" style="max-height:500px">
+    </div>
+  </div>
+
+  <p>RSA (Rivest-Shamir-Adleman) is one of the most famous asymmetric algorithms. Its security relies on the difficulty of <strong>factoring large numbers</strong>.</p>
+
+  <h3>Key Generation</h3>
+  <div class="step-container reveal">
+    <div class="step-controls">
+      <button class="btn btn-step btn-step-next">> Next Step</button>
+      <button class="btn btn-step btn-step-prev" disabled>< Prev</button>
+      <button class="btn btn-reset">Reset</button>
+      <span class="step-indicator">1 / 5</span>
+    </div>
+    <div class="step-content">
+      <div class="active">
+        <div class="equation-box">
+          <div class="equation-label">1. Choose two large primes</div>
+          $$p = 61, \quad q = 53$$
+          <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:0.5rem">In practice, p and q are hundreds of digits long</div>
+        </div>
+      </div>
+      <div>
+        <div class="equation-box">
+          <div class="equation-label">2. Compute n and phi(n)</div>
+          $$n = p \times q = 61 \times 53 = 3233$$
+          $$\phi(n) = (p-1)(q-1) = 60 \times 52 = 3120$$
+          <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:0.5rem">n is the modulus (public). phi(n) is Euler's totient (secret).</div>
+        </div>
+      </div>
+      <div>
+        <div class="equation-box">
+          <div class="equation-label">3. Choose public exponent e</div>
+          $$e = 17 \quad \text{where} \quad \gcd(e, \phi(n)) = 1$$
+          <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:0.5rem">e must be coprime with phi(n). Common choice: 65537</div>
+        </div>
+      </div>
+      <div>
+        <div class="equation-box">
+          <div class="equation-label">4. Compute private exponent d</div>
+          $$d = e^{-1} \mod \phi(n) = 17^{-1} \mod 3120 = 2753$$
+          $$e \times d \equiv 1 \pmod{\phi(n)}$$
+          <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:0.5rem">d is the modular inverse of e (extended Euclidean algorithm)</div>
+        </div>
+      </div>
+      <div>
+        <div class="equation-box" style="border-color:rgba(0,255,136,0.3)">
+          <div class="equation-label" style="color:var(--green)">Result - Key Pair</div>
+          <div style="display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;margin-top:0.5rem">
+            <div style="padding:0.8rem;background:rgba(0,255,136,0.08);border-radius:8px;border:1px solid rgba(0,255,136,0.2)">
+              <div style="font-size:0.72rem;color:var(--green);font-family:var(--font-mono)">PUBLIC KEY</div>
+              <div style="font-size:1.1rem;color:var(--text-primary)">$(e, n) = (17, 3233)$</div>
+            </div>
+            <div style="padding:0.8rem;background:rgba(255,45,107,0.08);border-radius:8px;border:1px solid rgba(255,45,107,0.2)">
+              <div style="font-size:0.72rem;color:var(--pink);font-family:var(--font-mono)">PRIVATE KEY</div>
+              <div style="font-size:1.1rem;color:var(--text-primary)">$(d, n) = (2753, 3233)$</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Encrypt and Decrypt</h3>
+  <div class="equation-box reveal">
+    <div style="display:flex;gap:2rem;justify-content:center;flex-wrap:wrap">
+      <div>$$c = m^e \mod n$$<div class="text-muted" style="font-size:0.75rem">Encryption</div></div>
+      <div>$$m = c^d \mod n$$<div class="text-muted" style="font-size:0.75rem">Decryption</div></div>
+    </div>
+  </div>
+
+  <h3>Why Is RSA Secure?</h3>
+  <p>Given two primes $p$ and $q$, it is <em>trivially easy to compute their product</em> $n=p \times q$.</p>
+  <p>However, <em>the inverse operation is very hard</em>! Given only $n$, we do not know any efficient method to find the numbers $p$ and $q$ such that their product is equal to $n$.</p>
+
+  <div class="callout callout-key reveal">
+    <div class="callout-title">[!] Prime trapdoor Function</div>
+    By ensuring that $p$ and $q$ are prime, we can assert that no other integer pair can have their product equal to $n$. With very large values that have no apparent relation, it becomes <strong>cryptographically secure</strong>.
+  </div>
+  
+</section>
+
+<section id="rsa-pitfalls" class="lecture-section">
+  <div class="section-header">
+    <div class="section-number">Section 09</div>
+    <h2 class="section-title">RSA CTF Pitfalls</h2>
+  </div>
+
+  <p>Like AES, CTF challenges rarely break RSA itself (that would be catastrophic). Instead, they exploit <em>implementation mistakes</em>.</p>
+
+  <div class="figure-container reveal">
+    <div class="figure-rsa-ctf-meme">
+        <img src="assets/security.png" alt="RSA security meme" style="max-height:500px">
+    </div>
+  </div>
+
+  <div class="pitfall-grid reveal">
+    <div class="pitfall-card">
+      <div class="pitfall-icon">1.</div>
+      <div class="pitfall-name">Small Primes</div>
+      <div class="pitfall-desc">If $p$ or $q$ are too small, n can be factored easily. Tools like <code>factordb</code> or <code>yafu</code> could break it in seconds.</div>
+    </div>
+    <div class="pitfall-card">
+      <div class="pitfall-icon">2.</div>
+      <div class="pitfall-name">Small exponent $e$</div>
+      <div class="pitfall-desc">If $m^e < n$, then $c = m^e$ and you can just take the $e$-th root! This also enables Coppersmith's attack with partial knowledge.</div>
+    </div>
+    <div class="pitfall-card">
+      <div class="pitfall-icon">3.</div>
+      <div class="pitfall-name">Common Modulus</div>
+      <div class="pitfall-desc">If a same message is encrypted with the same $n$ but different exponents $e$, we may use the extended GCD algorithm to recover plaintext without factoring.</div>
+    </div>
+    <div class="pitfall-card">
+      <div class="pitfall-icon">4.</div>
+      <div class="pitfall-name">Wiener's Attack</div>
+      <div class="pitfall-desc">When $d$ is small ($d < n^{0.25}/3$), continued fractions on $e/n$ could reveal the private key $d$ directly.</div>
+    </div>
+    <div class="pitfall-card">
+      <div class="pitfall-icon">5.</div>
+      <div class="pitfall-name">Shared Prime ($p$)</div>
+      <div class="pitfall-desc">If two RSA keys share a prime factor, we may compute $\text{GCD}(n_1, n_2)$ to reveal the shared prime $p$, thus allowing to deduce $q=n/p$</div>
+    </div>
+    <div class="pitfall-card">
+      <div class="pitfall-icon">6.</div>
+      <div class="pitfall-name">Hastad's Broadcast</div>
+      <div class="pitfall-desc">If the same message is sent to $\geq e$ recipients (especially with small values of $e$), the Chinese Remainder Theorem + $e$-th root method could recover $m$.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-info reveal">
+    <div class="callout-title">[!] CTF Tip</div>
+    The first reflexes when encountering an RSA implementation is to check those common details! Is $n$ factorable? Is $e$ suspiciously small/large? Are there multiple ciphertexts with the same $n$? Does the implementation give information about the padding correctness? Start with <code>factordb.com</code> and <a href="https://github.com/RsaCtfTool/RsaCtfTool" style="color:var(--cyan)" target="_blank">RsaCtfTool</a>.
+  </div>
+</section>
+
+<section id="hashing" class="lecture-section">
+  <div class="section-header">
+    <div class="section-number">Section 10</div>
+    <h2 class="section-title">Hashing Algorithms</h2>
+  </div>
+
+  <p>A hash function is like a <strong>blender</strong>: you throw in any data and get out a fixed-size fingerprint in such a way that you <em>cannot</em> reconstruct the input from the output. It is called a <em>one-way function</em>.</p>
+
+  <div class="figure-container reveal">
+    <svg viewBox="0 0 500 140" xmlns="http://www.w3.org/2000/svg" style="max-width:480px">
+      <!-- Input -->
+      <rect x="10" y="40" width="110" height="50" rx="8" fill="#131a2b" stroke="#00f0ff" stroke-width="1.5"/>
+      <text x="65" y="60" text-anchor="middle" fill="#00f0ff" font-size="10" font-family="JetBrains Mono">Any input</text>
+      <text x="65" y="78" text-anchor="middle" fill="#e0e6f0" font-size="11" font-family="JetBrains Mono">"Hello!"</text>
+      <!-- Arrow -->
+      <text x="145" y="70" fill="#4a5568" font-size="14" font-family="JetBrains Mono">-></text>
+      <!-- Blender -->
+      <g>
+        <rect x="175" y="25" width="110" height="80" rx="12" fill="#1a1040" stroke="#7b61ff" stroke-width="2"/>
+        <text x="230" y="55" text-anchor="middle" fill="#e0e6f0" font-size="14" font-family="JetBrains Mono">#?#</text>
+        <text x="230" y="80" text-anchor="middle" fill="#7b61ff" font-size="10" font-family="JetBrains Mono" font-weight="bold">Hashing Algorithm</text>
+      </g>
+      <!-- Arrow -->
+      <text x="310" y="70" fill="#4a5568" font-size="14" font-family="JetBrains Mono">-></text>
+      <!-- Output -->
+      <rect x="340" y="40" width="150" height="50" rx="8" fill="#131a2b" stroke="#ff2d6b" stroke-width="1.5"/>
+      <text x="415" y="58" text-anchor="middle" fill="#ff2d6b" font-size="10" font-family="JetBrains Mono">Fixed-size output</text>
+      <text x="415" y="78" text-anchor="middle" fill="#e0e6f0" font-size="9" font-family="JetBrains Mono">8b1a9953c4...</text>
+      <!-- No reverse arrow -->
+      <text x="230" y="128" text-anchor="middle" fill="#ff2d6b" font-size="10" font-family="JetBrains Mono">[x] Cannot reverse!</text>
+    </svg>
+  </div>
+
+  <h3>Common Hash Functions</h3>
+  <table class="styled-table reveal">
+    <thead>
+      <tr><th>Algorithm</th><th>Output Size</th><th>Status</th><th>Use</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>MD5</td><td>128 bit</td><td class="text-red" style="color:var(--red)">Broken</td><td>Legacy, checksums</td></tr>
+      <tr><td>SHA-1</td><td>160 bit</td><td class="text-orange">Deprecated</td><td>Git (migrating away)</td></tr>
+      <tr><td>SHA-256</td><td>256 bit</td><td class="text-green">Secure</td><td>TLS, Bitcoin, certs</td></tr>
+      <tr><td>SHA-3</td><td>256 bit</td><td class="text-green">Secure</td><td>Modern alternative</td></tr>
+      <tr><td>...</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-warning reveal">
+    <div class="callout-title">[!] Broken doesn't mean inversible</div>
+    In the case of <code>MD5</code>, we are still unable to produce the inverse operation! However, because it has become very easy to bruteforce this algorithm with modern hardware, and because big libraries of MD5 hashes called <em>Rainbow Tables</em> have been built, it is considered <strong>broken</strong>.
+  </div>
+
+  <h3>Avalanche Effect</h3>
+  <p>A good hashing function builds on Shannon's Principles with the <strong>avalanche effect</strong>: changing a single bit of input completely changes the output <em>unpredictably</em>.</p>
+
+  <div class="interactive-widget reveal" id="avalanche-demo">
+    <div class="widget-title">Avalanche Effect</div>
+    <div style="margin-bottom:0.8rem">
+      <label class="text-muted" style="font-size:0.75rem">Input string:</label>
+      <input class="challenge-input avalanche-input" value="Hello" style="max-width:200px">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="encoding-cell">
+        <div class="label">Hash of input</div>
+        <div class="value hash-original text-cyan" style="font-size:0.85rem">...</div>
+      </div>
+      <div class="encoding-cell">
+        <div class="label">Hash of input with a single bit changed</div>
+        <div class="value hash-flipped text-pink" style="font-size:0.85rem">...</div>
+      </div>
+    </div>
+    <div class="hash-diff text-orange font-mono" style="text-align:center;margin-top:0.6rem;font-size:0.85rem">...</div>
+    <div class="figure-caption">By flipping <strong>a singular bit</strong>, the entire hash changes drastically</div>
+  </div>
+
+  <div class="figure-container reveal">
+    <div class="figure-hash-meme">
+        <img src="assets/hash.jpg" alt="hash meme" style="max-height:500px">
+    </div>
+  </div>
+
+</section>
+
+<section id="prng" class="lecture-section">
+  <div class="section-header">
+    <div class="section-number">Section 11</div>
+    <h2 class="section-title">PRNG vs CSPRNG</h2>
+  </div>
+
+  <p>Many crypto systems need random numbers. To generate the RSA-primes, unique OTP keys, high entropy passwords... But not all "random" is created equal.</p>
+
+  <div class="comparison-row reveal">
+    <div class="comparison-item">
+      <h4 class="text-orange" style="margin-top:0">PRNG</h4>
+      <p style="font-size:0.85rem"><strong>Pseudo</strong>-Random Number Generator. <br>
+        A set of deterministic algorithms that <em>looks</em> random, but always produces the same values in the same order over an initial state <code>seed</code> and a relation $f$ of set parameters.</p>
+      <div class="font-mono text-muted" style="font-size:0.78rem">Examples: LCG, Mersenne Twister, LFSR, Middle Square</div>
+    </div>
+    <div class="comparison-item">
+      <h4 class="text-green" style="margin-top:0">CSPRNG</h4>
+      <p style="font-size:0.85rem"><strong>Cryptographically Secure</strong> PRNG. A set of methods with an output that is computationally indistinguishable from true randomness. Such algorithms are necessary for cryptographic assets such as keys, IVs, and nonces.</p>
+      <div class="font-mono text-muted" style="font-size:0.78rem"><code>/dev/urandom</code> uses a <em>pool of data</em> from disk usage, cpu activity, user inputs and other devices of high entropy to generate CSPRNG values</div>
+    </div>
+  </div>
+
+  <h3>Linear Congruential Generator (LCG)</h3>
+  <p>One of the simplest PRNGs is the LCG. Given the parameters $a, c, m$ and one value $X_k$, you can <strong>predict every value $X_{\geq k}$</strong>:</p>
+
+  <div class="equation-box reveal">
+    <div class="equation-label">LCG Formula</div>
+    $$X_{n+1} = (a \cdot X_n + c) \mod m$$
+    <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.5rem">The first value of the cycle $X_0$ is called the <em>seed</em></div>
+  </div>
+
+  <h3>LCG Scatter and Patterns</h3>
+  <p>Due to the linear relationship between consecutive LCG pairs $(X_n, X_{n+1})$, we can observe <strong>visible patterns</strong> when plotted (by Marsaglia's theorem)</p>
+
+  <div class="figure-container reveal">
+    <div class="scatter-container">
+      <div>
+        <div class="scatter-plot">
+          <canvas id="lcg-scatter" width="200" height="200" style="background:#0a0e17"></canvas>
+        </div>
+        <div class="scatter-label">LCG values</div>
+      </div>
+      <div>
+        <div class="scatter-plot">
+          <canvas id="csprng-scatter" width="200" height="200" style="background:#0a0e17"></canvas>
+        </div>
+        <div class="scatter-label">CSPRNG values</div>
+      </div>
+    </div>
+    <div class="figure-caption">Done over 500 random values.<br>
+    LCG parameters: $a = 89,\; c = 2,\; m = 101$</div>
+  </div>
+
+  <!-- Populate CSPRNG scatter on load -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const canvas = document.getElementById('csprng-scatter');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(0, 255, 136, 0.5)';
+      for (let i = 0; i < 500; i++) {
+        ctx.beginPath();
+        ctx.arc(Math.random() * 200, Math.random() * 200, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+  </script>
+
+  <div class="callout callout-warning reveal">
+    <div class="callout-title">[!] CTF Takeaway</div>
+    If a CTF challenge uses a PRNG (especially LCG or Mersenne Twister) for key generation or encryption, <strong>the randomness is breakable</strong>. Recover the state -> predict future outputs -> break the crypto.
+  </div>
+
+  <div class="figure-container reveal">
+    <div class="figure-prng-meme">
+        <img src="assets/true_random.png" alt="Real Random Meme" style="max-height:500px">
+    </div>
+  </div>
+
+  <!-- Closing -->
+  <div style="text-align:center;margin-top:4rem;padding:2rem;border-top:1px solid rgba(0,240,255,0.1)">
+    <h3 style="color:var(--cyan);margin:0">Thank you for reading! :)</h3>
+    <p style="color:var(--text-muted);font-size:0.9rem;max-width:400px;margin:0.5rem auto 0">You now have the foundations to tackle crypto CTF challenges. Hope to see you Wednesday for the <br><strong style="color:var(--pink)">hands-on workshop</strong>!</p>
+    <p style="color:var(--text-muted);font-size:0.9rem;max-width:400px;margin:0.5rem auto 0">~Harm</p>
+  </div>
+</section>
+
+</main>
+</div>
+
+<!-- Scripts (order matters) -->
+<script src="js/crypto-utils.js"></script>
+<script src="js/animations.js"></script>
+<script src="js/challenges.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>
