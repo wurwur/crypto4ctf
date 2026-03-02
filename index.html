@@ -143,7 +143,7 @@
   </div>
 
   <h3>XORing</h3>
-  <p>The <strong>XOR</strong> (aka exclusive OR) operation is one of the most fondamental operations of most encryption. The bit-wise XOR <em>^</em> simply applies the rules detailed in the <strong>truth table</strong> below for each bit.</p>
+  <p>The <strong>XOR</strong> (aka exclusive OR) operation is one of the most fundamental operations of most encryption. The bit-wise XOR <em>^</em> simply applies the rules detailed in the <strong>truth table</strong> below for each bit.</p>
 
   <div class="interactive-widget reveal" id="xor-demo">
     <div class="widget-title">XOR Demo</div>
@@ -803,7 +803,7 @@
   <p>Let's go back to the previous <em>lockbox analogy</em>. Except now, instead of using the same padlock, we follow a different protocol:</p>
   <ul style="margin:0.3rem 0 0 1rem;color:var(--text-primary);font-size:0.88rem">
       <li>Bob generates both his own personal <em>private key</em> and <em>public padlock</em></li>
-      <li>Bob can safely send the padlock over an open channel to Alice: the padlock <strong>locks only</strong></li>
+      <li>Bob can safely send the padlock over an open channel to Alice: the padlock can be <strong>locked</strong>, but without the key it can't be unlocked.</li>
       <li>Alice uses <em>Bob's padlock</em> to secure the box in which she hid a message</li>
       <li>The box with the message being secured, it can be safely shared over an open channel</li>
       <li><em>Only Bob</em> has access to the key, so only he can open the locked box</li>
@@ -811,7 +811,7 @@
 
   <div class="callout callout-key reveal">
     <div class="callout-title">[!] Key Insight</div>
-    <strong>Asymmetrical Ciphers use two keys:</strong> a <em class="text-green">public key</em> (which can be shared freely) and a <em class="text-pink">private key</em> (which is kept secret). Knowing the public key does <strong>not</strong> reveal the private key, and only serves to encrypt data.
+    <strong>Asymmetrical Ciphers use two keys:</strong> a <em class="text-green">public key</em> (which can be shared freely) and a <em class="text-pink">private key</em> (which is kept secret). The public key is only used to <strong>encrypt</strong> data, knowing it doesn't reveal the <strong>private</strong> key.
   </div>
 
 </section>
@@ -912,7 +912,7 @@
     <h2 class="section-title">RSA CTF Pitfalls</h2>
   </div>
 
-  <p>Like AES, CTF challenges rarely break RSA itself (that would be catastrophic). Instead, they exploit <em>implementation mistakes</em>.</p>
+  <p>Like AES, RSA CTF exploit <em>implementation mistakes</em>, they don't break the algorithm itself.</p>
 
   <div class="figure-container reveal">
     <div class="figure-rsa-ctf-meme">
@@ -924,7 +924,7 @@
     <div class="pitfall-card">
       <div class="pitfall-icon">1.</div>
       <div class="pitfall-name">Small Primes</div>
-      <div class="pitfall-desc">If $p$ or $q$ are too small, n can be factored easily. Tools like <code>factordb</code> or <code>yafu</code> could break it in seconds.</div>
+      <div class="pitfall-desc">If $p$ or $q$ are too small, $n$ can be factored easily. Tools like <code>factordb</code> or <code>yafu</code> could break it in seconds.</div>
     </div>
     <div class="pitfall-card">
       <div class="pitfall-icon">2.</div>
