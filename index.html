@@ -80,14 +80,15 @@
       <text x="80" y="95" text-anchor="middle" fill="#00f0ff" font-size="22" font-family="JetBrains Mono" font-weight="bold">A</text>
       <text x="80" y="115" text-anchor="middle" fill="#00f0ff" font-size="11" font-family="JetBrains Mono">Alice</text>
 
-      <!-- Channel (wavy line) -->
-      <path d="M130 100 Q200 60 300 100 Q400 140 470 100" fill="none" stroke="#4a5568" stroke-width="2" stroke-dasharray="5,5">
+      <!-- Channel (str*ight line) -->
+      <path d="M140,100 L440,100" fill="none" stroke="#4a5568" stroke-width="2" stroke-dasharray="5,5">
         <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="1s" repeatCount="indefinite"/>
       </path>
-      <text x="300" y="80" text-anchor="middle" fill="#ff2d6b" font-size="10" font-family="JetBrains Mono">OPEN CHANNEL</text>
 
-      <!-- Message envelope (animated along straight path) -->
-      <path id="msg-path" d="M140,120 L440,120" fill="none" stroke="none"/>
+      <text x="300" y="70" text-anchor="middle" fill="#ff2d6b" font-size="10" font-family="JetBrains Mono">OPEN CHANNEL</text>
+
+      <!-- Message envelope -->
+      <path id="msg-path" d="M140,100 L440,100" fill="none" stroke="none"/>
       <g>
         <animateMotion dur="3s" repeatCount="indefinite">
           <mpath href="#msg-path"/>
@@ -182,7 +183,7 @@
 
   <div class="callout callout-info reveal">
     <div class="callout-title">[*] XOR is its own inverse</div>
-    <code>message XOR key = ciphertext</code> and <code>ciphertext XOR key = message</code> -- this property makes XOR perfect for encryption.
+    <code>message XOR key = ciphertext</code> and <code>ciphertext XOR key = message</code>: this property makes XOR perfect for encryption.
   </div>
 
   <div class="callout callout-key reveal">
@@ -811,7 +812,7 @@
 
   <div class="callout callout-key reveal">
     <div class="callout-title">[!] Key Insight</div>
-    <strong>Asymmetrical Ciphers use two keys:</strong> a <em class="text-green">public key</em> (which can be shared freely) and a <em class="text-pink">private key</em> (which is kept secret). The public key is only used to <strong>encrypt</strong> data, knowing it doesn't reveal the <strong>private</strong> key.
+      <strong>Asymmetrical Ciphers use two keys:</strong> a <em class="text-green">public key</em> (which can be shared freely) and a <em class="text-pink">private key</em> (which is kept secret). The public key is only used to <strong>encrypt</strong> data, knowing it doesn't reveal the <strong>private</strong> key.
   </div>
 
 </section>
