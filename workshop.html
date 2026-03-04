@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Workshop - Challenges</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+
+  <!-- Prism.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+
+  <!-- Reuse main CSS -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    /* ── Workshop-specific styles ── */
+    .workshop-locked {
+      opacity: 0;
+      transform: translateY(40px);
+      pointer-events: none;
+      max-height: 0;
+      overflow: hidden;
+      transition: opacity 0.8s ease, transform 0.8s ease, max-height 0.8s ease;
+    }
+    .workshop-unlocked {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      max-height: none;
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+    .workshop-unlocking {
+      animation: workshopReveal 0.8s ease forwards;
+    }
+    @keyframes workshopReveal {
+      0%   { opacity: 0; transform: translateY(40px); max-height: 0; }
+      50%  { max-height: 5000px; }
+      100% { opacity: 1; transform: translateY(0); max-height: none; }
+    }
+
+    .toc-list .toc-status {
+      margin-left: auto;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+    .toc-list a.toc-locked {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+    .toc-list a.toc-solved .toc-icon { color: var(--green); }
+
+    .flag-input-group {
+      display: flex;
+      gap: 0.6rem;
+      margin: 1.2rem 0 0.5rem;
+    }
+    .flag-input {
+      flex: 1;
+      background: var(--bg-primary);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 8px;
+      padding: 0.7rem 1rem;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .flag-input:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+    }
+    .flag-input::placeholder { color: var(--text-muted); }
+    .flag-input.correct {
+      border-color: var(--green) !important;
+      box-shadow: 0 0 12px rgba(0, 255, 136, 0.2) !important;
+    }
+    .flag-input.incorrect {
+      animation: shake 0.4s ease;
+    }
+
+    .flag-feedback {
+      font-size: 0.85rem;
+      padding: 0.3rem 0;
+      min-height: 1.5rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+    .flag-feedback.correct { color: var(--green); }
+    .flag-feedback.incorrect { color: var(--red); }
+
+    .challenge-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      color: white;
+      font-weight: 800;
+      font-size: 0.95rem;
+      margin-right: 0.6rem;
+      flex-shrink: 0;
+    }
+    .section-title-row {
+      display: flex;
+      align-items: center;
+    }
+
+    .challenge-data {
+      background: var(--bg-code);
+      border: 1px solid rgba(0, 240, 255, 0.1);
+      border-radius: 10px;
+      padding: 1.2rem;
+      margin: 1rem 0;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--cyan);
+      word-break: break-all;
+      line-height: 1.8;
+      overflow-x: auto;
+    }
+
+    .solved-banner {
+      display: none;
+      background: rgba(0, 255, 136, 0.08);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      border-radius: 10px;
+      padding: 0.8rem 1.2rem;
+      margin-top: 1rem;
+      color: var(--green);
+      font-weight: 600;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+    }
+    .solved-banner.show { display: flex; align-items: center; gap: 0.5rem; }
+
+    .service-info {
+      background: var(--bg-card);
+      border: 1px solid rgba(123, 97, 255, 0.2);
+      border-radius: 10px;
+      padding: 1.2rem;
+      margin: 1rem 0;
+    }
+    .service-info code {
+      background: rgba(0, 240, 255, 0.1);
+      color: var(--cyan);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.87em;
+    }
+
+    .reset-all-btn {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 150;
+      background: rgba(255,71,87,0.15);
+      border: 1px solid rgba(255,71,87,0.3);
+      color: var(--red);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .reset-all-btn:hover {
+      background: rgba(255,71,87,0.25);
+      box-shadow: 0 0 15px rgba(255,71,87,0.2);
+    }
+
+    pre[class*="language-"] {
+      border-radius: 10px;
+      margin: 1rem 0;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Mobile Hamburger -->
+<button class="hamburger" aria-label="Toggle menu">Menu</button>
+
+<div class="app-layout">
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SIDEBAR                                     -->
+<!-- ═══════════════════════════════════════════ -->
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <h1>Crypto Workshop</h1>
+  </div>
+  <div class="progress-container">
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="ws-progress-fill"></div></div>
+    <div class="progress-text"><span>Challenges</span><span class="progress-pct" id="ws-progress-text">0 / 11</span></div>
+  </div>
+  <ul class="toc-list" id="ws-toc">
+    <li><a href="#intro" data-ch="intro">Introduction<span class="toc-status"></span></a></li>
+    <li><a href="#ch1" data-ch="1">"Non-binary" ?? How obscene<span class="toc-status"></span></a></li>
+    <li><a href="#ch2" data-ch="2">Base64 is *absolutely* encryption<span class="toc-status"></span></a></li>
+    <li><a href="#ch3" data-ch="3">A fine cipher<span class="toc-status"></span></a></li>
+    <li><a href="#ch4" data-ch="4">Taste the Rainbow<span class="toc-status"></span></a></li>
+    <li><a href="#ch5" data-ch="5">Frequency Analysis<span class="toc-status"></span></a></li>
+    <li><a href="#ch6" data-ch="6">Head empty, no thoughts<span class="toc-status"></span></a></li>
+    <li><a href="#ch7" data-ch="7">No don't worry the big ones scare me<span class="toc-status"></span></a></li>
+    <li><a href="#ch8" data-ch="8">OTP: Surely this time...<span class="toc-status"></span></a></li>
+    <li><a href="#ch9" data-ch="9">The clock is leaking<span class="toc-status"></span></a></li>
+    <li><a href="#ch10" data-ch="10">ECDSA: Recycling, but not always<span class="toc-status"></span></a></li>
+  </ul>
+</nav>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MAIN CONTENT                                -->
+<!-- ═══════════════════════════════════════════ -->
+<main class="main-content">
+
+<!-- ╔═══════════════════════════════════════════╗ -->
+<!-- ║  INTRODUCTION                              ║ -->
+<!-- ╚═══════════════════════════════════════════╝ -->
+<section id="intro" class="lecture-section workshop-unlocked" data-challenge="intro">
+  <div class="section-header">
+    <div class="section-number">Workshop</div>
+    <h2 class="section-title">Crypto Challenges</h2>
+  </div>
+
+  <p>This workshop puts into practice the concepts from the <a href="https://harm.tar.nz/crypto4ctf" style="color: var(--cyan);">Crypto for CTFs</a> lecture. You'll work through <strong>progressively harder challenges</strong>.</p>
+
+  <div class="callout callout-key">
+    <div class="callout-title">🚩 Flag Format</div>
+    <p>All flags follow the format: <code>Harm{...}</code></p>
+    <p>For example: <code>Harm{th1s_1s_4_fl4g}</code></p>
+  </div>
+
+  <h3>Tools You'll Need</h3>
+  <p>Keep these handy throughout the workshop:</p>
+
+  <div class="callout callout-info">
+    <div class="callout-title">🛠️ Essential Tools</div>
+    <p><strong>Python 3</strong>: Most challenges require some scripting in python for automation.</p>
+    <p><strong>nc (netcat)</strong>: A program used to interact with services over TCP.</p>
+    <pre><code class="language-bash">❯ nc localhost 1337          
+# Connect to a service "localhost" on port 1337</code></pre>
+    <p><strong>xxd</strong>: Program used for hex dumps and binary inspection:</p>
+    <pre><code class="language-bash">❯ echo -n "Hello" | xxd
+00000000: 4865 6c6c 6f                             Hello
+
+❯ xxd Figure_1.png | head -n2
+00000000: 8950 4e47 0d0a 1a0a 0000 000d 4948 4452  .PNG........IHDR
+00000010: 0000 09f2 0000 05f4 0806 0000 0088 446a  ..............Dj
+
+# /!\ Note: most files have a header 
+# with useful data about the rest of the structure. 
+# The header often begins with a file signature, which is always the same, 
+# and is how your OS recognises the file in the first place</code></pre>
+  <p><strong><a href="https://en.wikipedia.org/wiki/List_of_file_signatures" style="color: var(--cyan);">Wikipedia File Signatures</a></strong>: A list of common file signatures.</p>
+  <p><strong><a href="https://crackstation.net/" style="color: var(--cyan);">crackstation.net</a></strong>: A giant online Rainbow Table.</p>
+  </div>
+</section>
+
+
+<!-- ╔═══════════════════════════════════════════╗ -->
+<!-- ║  CHALLENGE 1 - BINARY ENCODING             ║ -->
+<!-- ╚═══════════════════════════════════════════╝ -->
+<section id="ch1" class="lecture-section" data-challenge="1">
+  <div class="section-header">
+    <div class="section-number">Challenge 01</div>
+    <h2 class="section-title"><div class="section-title-row"><span class="challenge-number">1</span> "Non-binary" ?? How obscene</div></h2>
+  </div>
+
+  <p>To computers, strings remain fundamentally just interpretations of organised bytes of data. Each group of <strong>8 bits</strong> (one byte) encodes a character using the <strong>ASCII</strong> table.</p>
+
+  <div class="callout callout-info">
+    <div class="callout-title">Reminder</div>
+    <p>ASCII maps each character to a number 0–127. For example: <code>A</code> = 65 = <code>01000001</code> in binary.</p></p>
+  </div>
+
+  <p>Decode the following binary string to reveal the flag:</p>
+
+  <div class="challenge-data">
+    01001000 01100001 01110010 01101101 01111011 01100010 00110001 01101110 00110100 01110010 01111001 01011111 01101101 00110100 01101011 00110011 01110011 01011111 01110011 00110011 01101110 01110011 00110011 01111101
+  </div>
+
+  <div class="flag-input-group">
+    <input type="text" class="flag-input" id="flag-1" placeholder="Harm{...}" autocomplete="off">
+    <button class="btn btn-check" onclick="Workshop.checkFlag(1)">Submit</button>
+  </div>
+  <div class="flag-feedback" id="feedback-1"></div>
+</section>
+
+
+<!-- ╔═══════════════════════════════════════════╗ -->
+<!-- ║  CHALLENGE 2 - BASE64 DECODING             ║ -->
+<!-- ╚═══════════════════════════════════════════╝ -->
+<section id="ch2" class="lecture-section" data-challenge="2">
+  <div class="section-header">
+    <div class="section-number">Challenge 02</div>
+    <h2 class="section-title"><div class="section-title-row"><span class="challenge-number">2</span> Base64 is *absolutely* encryption</div></h2>
+  </div>
+
+  <p><strong>Base64</strong> is an encoding scheme that represents binary data using 64 printable ASCII characters (<code>A-Z</code>, <code>a-z</code>, <code>0-9</code>, <code>+</code>, <code>/</code>)</p>
+
+  <div class="callout callout-info">
+    <div class="callout-title">How Base64 works</div>
+    <p>1. Take 3 bytes of input ($8 \times 3 = 24$ bits)</p>
+    <p>2. Split into 4 groups of 6 bits</p>
+    <p>3. Map each 6-bit value to a Base64 character</p>
+    <p>4. Pad with <code>=</code> if input isn't a multiple of 3 bytes</p>
+  </div>
+
+  <p>Decode this Base64 string:</p>
+
+  <div class="challenge-data">
+    SGFybXtkM2MwZDNfdGgxc19iNHMzNjR9
+  </div>
+
+  <div class="flag-input-group">
+    <input type="text" class="flag-input" id="flag-2" placeholder="Harm{...}" autocomplete="off">
+    <button class="btn btn-check" onclick="Workshop.checkFlag(2)">Submit</button>
+  </div>
+  <div class="flag-feedback" id="feedback-2"></div>
+</section>
+
+
+<!-- ╔═══════════════════════════════════════════╗ -->
+<!-- ║  CHALLENGE 3 - MODULAR ARITHMETIC          ║ -->
+<!-- ╚═══════════════════════════════════════════╝ -->
+<section id="ch3" class="lecture-section" data-challenge="3">
+  <div class="section-header">
+    <div class="section-number">Challenge 03</div>
+    <h2 class="section-title"><div class="section-title-row"><span class="challenge-number">3</span>A fine cipher</div></h2>
+  </div>
+
+  <p>We said XORing was safe... right ? Given the following source code and cipher, can you retrieve the flag?</p>
+
+  <h3>Source</h3>
+  <pre><code class="language-python">FLAG = b"???"   # secret
+
+def encrypt(plaintext: bytes, a: int = 11, b: int = 7) -> list[int]:
+    return [(a * byte + b) % 256 for byte in plaintext]
+
+ciphertext = encrypt(FLAG)
+print(ciphertext)</code></pre>
+
+  <h3>Ciphertext</h3>
+  <div class="challenge-data">
+    [31, 50, 237, 182, 80, 182, 23, 83, 28, 182, 67, 3, 127, 102]
+  </div>
+
+  <div class="flag-input-group">
+    <input type="text" class="flag-input" id="flag-3" placeholder="Harm{...}" autocomplete="off">
+    <button class="btn btn-check" onclick="Workshop.checkFlag(3)">Submit</button>
+  </div>
+  <div class="flag-feedback" id="feedback-3"></div>
+</section>
+
+
+<!-- ╔═══════════════════════════════════════════╗ -->
+<!-- ║  CHALLENGE 4 - RAINBOW TABLE               ║ -->
+<!-- ╚═══════════════════════════════════════════╝ -->
+<section id="ch4" class="lecture-section" data-challenge="4">
+  <div class="section-header">
+    <div class="section-number">Challenge 04</div>
+    <h2 class="section-title"><div class="section-title-row"><span class="challenge-number">4</span>Taste the Rainbow</div></h2>
+  </div>
+
+  <p>This time, I went above and beyond and used a <strong>hash function</strong> to hide the flag. Make sure to surround the flag in the format <em>Harm{.*}</em> before validating.</p>
+
+  <div class="challenge-data">
+    sha256: 16cf1ed06f67efd71491b9af4e6517c46ab8640db80357db5ce8cd7fa77f2ecf
+  </div>
+
+  <div class="flag-input-group">
+    <input type="text" class="flag-input" id="flag-4" placeholder="Harm{...}" autocomplete="off">
+    <button class="btn btn-check" onclick="Workshop.checkFlag(4)">Submit</button>
+  </div>
+  <div class="flag-feedback" id="feedback-4"></div>
+</section>
+
+
+<!-- ╔═══════════════════════════════════════════╗ -->
+<!-- ║  CHALLENGE 5 - FREQUENCY ANALYSIS          ║ -->
+<!-- ╚═══════════════════════════════════════════╝ -->
+<section id="ch5" class="lecture-section" data-challenge="5">
+  <div class="section-header">
+    <div class="section-number">Challenge 05</div>
+    <h2 class="section-title"><div class="section-title-row"><span class="challenge-number">5</span> Frequency Analysis</div></h2>
+  </div>
+
+  <p>A <strong>monoalphabetic substitution cipher</strong> replaces each letter with another fixed letter. Since each letter always maps to the same substitute, the <em>frequency distribution</em> of letters is preserved - just relabeled.</p>
+
+  <h3>Ciphertext</h3>
+  <div class="challenge-data" style="font-size: 0.82rem; line-height: 2;">EKT QRE XG JRDNEXFRQNKD KQY MTTO YEVZPTZ GXR JTOEVRPTY. GRXB QOJPTOE RXBT EX BXZTRO JXBNVEPOF, EKT ZTYPRT EX LTTN YTJRTEY KQY ZRPHTO POOXHQEPXO. GRTCVTOJD QOQSDYPY PY XOT XG EKT XSZTYE ETJKOPCVTY VYTZ EX MRTQL YPBNST YVMYEPEVEPXO JPNKTRY. MD TAQBPOPOF IKPJK STEETRY QNNTQR BXYE XGETO PO EKT JPNKTRETAE QOZ JXBNQRPOF EKTB EX LOXIO STEETR GRTCVTOJPTY PO TOFSPYK, QO QEEQJLTR JQO ZTZVJT EKT YVMYEPEVEPXO LTD. XOJT DXV JRQJL EKPY JPNKTR, YVMBPE DXVR GSQF: KQRB{GR3CV3OJD_I1OY}</div>
+
+  <div class="callout callout-key">
+    <div class="callout-title">Note:</div>
+    <p>All <strong>letters are lowercase</strong> except <em>Harm</em> in flag. Numbers and characters unaffected.</p>
+  </div>
+
+  <div class="flag-input-group">
+    <input type="text" class="flag-input" id="flag-5" placeholder="Harm{...}" autocomplete="off">
+    <button class="btn btn-check" onclick="Workshop.checkFlag(5)">Submit</button>
+  </div>
+  <div class="flag-feedback" id="feedback-5"></div>
+</section>
+
+
+<!-- ╔═══════════════════════════════════════════╗ -->
+<!-- ║  CHALLENGE 6 - XOR KNOWN PLAINTEXT         ║ -->
+<!-- ╚═══════════════════════════════════════════╝ -->
+<section id="ch6" class="lecture-section" data-challenge="6">
+  <div class="section-header">
+    <div class="section-number">Challenge 06</div>
+    <h2 class="section-title"><div class="section-title-row"><span class="challenge-number">6</span>Head empty, no thoughts</div></h2>
+  </div>
+
+  <p>Okay, let's do some real OTP now. No more *bad* implementations, trust ^^ </p>
+
+  <div class="equation-box">
+    <div class="equation-label">XOR Reminder</div>
+    $$\text{ciphertext} = \text{plaintext} \oplus \text{key}$$
+    $$\text{key} = \text{ciphertext} \oplus \text{plaintext}$$
+  </div>
+
+  <div class="callout callout-info">
+    <div class="callout-title">Note:</div>
+    <p>The <em>KEY</em> is repeated as many times as necessary to span over the entire plaintext.</p>
+  </div>
+
+  <h3>Source Code</h3>
+  <pre><code class="language-python">
+FLAG = b"???"
+KEY = b"???"
+
+message = b"Congratulations! The flag is: " + FLAG + b", which you can use to validate the challenge :)"
+
+encrypted = bytes(
+    message[i] ^ KEY[i % len(KEY)]
+    for i in range(len(message))
+)
+
+print(" ".join(f"{b:02x}" for b in encrypted))</code></pre>
+
+  <h3>Ciphertext</h3>
+  <div class="challenge-data">
+    10 5c 0d 15 41 35 27 46 0f 13 47 3d 3c 5d 10 53 13 00 3b 56 43 14 5f 35 34 13 0a 01 09 74 1b 52 11 1f 48 0c 63 61 0a 1c 74 0b 04 00 0f 3e 6c 06 60 52 0f 1e 6a 0b 3a 60 3c 3a 73 26 17 12 42 0f 1f 74 24 5b 0a 11 5b 74 2a 5c 16 52 50 35 3d 13 16 01 56 74 27 5c 43 04 52 38 3a 57 02 06 56 74 27 5b 06 52 50 3c 32 5f 0f 17 5d 33 36 13 59 5b
+  </div>
+
+  <div class="flag-input-group">
+    <input type="text" class="flag-input" id="flag-6" placeholder="Harm{...}" autocomplete="off">
+    <button class="btn btn-check" onclick="Workshop.checkFlag(6)">Submit</button>
+  </div>
+  <div class="flag-feedback" id="feedback-6"></div>
+</section>
+
+
+<!-- ╔═══════════════════════════════════════════╗ -->
+<!-- ║  CHALLENGE 7 - RSA FACTORIZATION           ║ -->
+<!-- ╚═══════════════════════════════════════════╝ -->
+<section id="ch7" class="lecture-section" data-challenge="7">
+  <div class="section-header">
+    <div class="section-number">Challenge 07</div>
+    <h2 class="section-title"><div class="section-title-row"><span class="challenge-number">7</span> No don't worry the big ones scare me</div></h2>
+  </div>
+
+  <div class="callout callout-key">
+    <div class="callout-title">RSA Protocol</div>
+    <p><strong>Key generation:</strong></p>
+    <p>1. Choose primes $p, q$. Compute $n = p \times q$</p>
+    <p>2. Compute $\phi(n) = (p-1)(q-1)$</p>
+    <p>3. Choose $e$ coprime to $\phi(n)$ (commonly $e = 65537$)</p>
+    <p>4. Compute $d = e^{-1} \bmod{\phi(n)}$ (private key)</p>
+    <p><strong>Encryption:</strong> $c = m^e \bmod{n}$</p>
+    <p><strong>Decryption:</strong> $m = c^d \bmod{n}$</p>
+  </div>
+
+
+  <h3>Source Code</h3>
+  <pre><code class="language-python">FLAG = "???"
+n = 100160063
+e = 65537
+
+ciphertext = [pow(ord(c), e, n) for c in FLAG]
+print(ciphertext)</code></pre>
+
+  <h3>Ciphertext</h3>
+  <div class="challenge-data" style="font-size: 0.8rem;">
+    [52155730, 10701355, 19816514, 24741128, 89322549, 71486436, 77295209, 4274484, 8267414, 25218096, 19816514, 90792725, 24741128, 80468760, 90792725, 65899003, 68313330, 80468760, 77295209, 41218456, 80468760, 76441218]
+  </div>
+
+  <div class="flag-input-group">
+    <input type="text" class="flag-input" id="flag-7" placeholder="Harm{...}" autocomplete="off">
+    <button class="btn btn-check" onclick="Workshop.checkFlag(7)">Submit</button>
+  </div>
+  <div class="flag-feedback" id="feedback-7"></div>
+</section>
+
+
+<!-- ╔═══════════════════════════════════════════╗ -->
+<!-- ║  CHALLENGE 8 - FAULTY OTP                  ║ -->
+<!-- ╚═══════════════════════════════════════════╝ -->
+<section id="ch8" class="lecture-section" data-challenge="8">
+  <div class="section-header">
+    <div class="section-number">Challenge 08</div>
+    <h2 class="section-title"><div class="section-title-row"><span class="challenge-number">8</span>OTP: Surely this time...</div></h2>
+  </div>
+
+  <p>A One-Time Pad (OTP) is <em>theoretically</em> unbreakable... Surely my software engineering skills aren't the issue...</p>
+
+  <div class="service-info">
+    <p><strong>Access the service:</strong></p>
+    <pre><code class="language-bash">nc [IP] [PORT]</code></pre>
+  </div>
+
+  <h3>Source Code</h3>
+  <pre><code class="language-python">import os # urandom is truly random ^^
+
+FLAG = b"???"
+
+def generate_otp(length):
+    otp = bytearray()
+    for _ in range(length):
+        b = os.urandom(1)[0]
+        while b == 0x69:     # haha funny
+            b = os.urandom(1)[0]
+        otp.append(b)
+    return bytes(otp)
+
+def encrypt(plaintext, otp):
+    return bytes(a ^ b for a, b in zip(plaintext, otp))</code></pre>
+
+  <div class="flag-input-group">
+    <input type="text" class="flag-input" id="flag-8" placeholder="Harm{...}" autocomplete="off">
+    <button class="btn btn-check" onclick="Workshop.checkFlag(8)">Submit</button>
+  </div>
+  <div class="flag-feedback" id="feedback-8"></div>
+</section>
+
+
+<!-- ╔═══════════════════════════════════════════╗ -->
+<!-- ║  CHALLENGE 9 - TIMING ATTACK              ║ -->
+<!-- ╚═══════════════════════════════════════════╝ -->
+<section id="ch9" class="lecture-section" data-challenge="9">
+  <div class="section-header">
+    <div class="section-number">Challenge 9</div>
+    <h2 class="section-title"><div class="section-title-row"><span class="challenge-number">9</span>The clock is leaking</div></h2>
+  </div>
+
+  <p>Well this clearly doesn't work, so here what we're going to do: no encryption, no information, NOTHING. It has to be unbreakable if there's nothing to break, right? :)</p>
+
+  <div class="service-info">
+    <p><strong>Access the service:</strong></p>
+    <pre><code class="language-bash">nc [IP] [PORT]</code></pre>
+  </div>
+
+  <h3>Source Code</h3>
+  <pre><code class="language-python">import time
+
+SECRET = "???"
+
+def compare(guess, secret):
+    for i in range(min(len(guess), len(secret))):
+        if guess[i] != secret[i]:
+            return False
+        time.sleep(0.1)   # TODO: remove sleep() in a month 
+                          # and pretend I improved the performance
+                          # of the app to my managers
+    return len(guess) == len(secret)</code></pre>
+
+
+
+  <div class="flag-input-group">
+    <input type="text" class="flag-input" id="flag-9" placeholder="Harm{...}" autocomplete="off">
+    <button class="btn btn-check" onclick="Workshop.checkFlag(9)">Submit</button>
+  </div>
+  <div class="flag-feedback" id="feedback-9"></div>
+</section>
+
+
+<!-- ╔═══════════════════════════════════════════╗ -->
+<!-- ║  CHALLENGE 10 - ECDSA NONCE REUSE          ║ -->
+<!-- ╚═══════════════════════════════════════════╝ -->
+<section id="ch10" class="lecture-section" data-challenge="10">
+  <div class="section-header">
+    <div class="section-number">Challenge 10</div>
+    <h2 class="section-title"><div class="section-title-row"><span class="challenge-number">!</span>ECDSA: Recycling, but not always</div></h2>
+  </div>
+
+  <p>Well done on getting here! If you're playing at home, congratulations for the dedication. First, some theory:</p>
+
+  <!-- ── ECDSA Deep Dive ── -->
+  <h3>Elliptic Curve Cryptography</h3>
+
+  <p>An <strong>elliptic curve</strong> over a finite field $\mathbb{F}_p$ is defined by</p>
+
+  <div class="equation-box">
+    <div class="equation-label">Elliptic Curve (Short Weierstrass Form)</div>
+    $$y^2 \equiv x^3 + ax + b \pmod{p}$$
+  </div>
+
+  <p>The set of points $(x, y)$ satisfying this equation, together with a special "point at infinity" $\mathcal{O}$, forms an <strong>abelian group</strong> under point addition.</p>
+
+  <h4>Point Addition</h4>
+  <p>Given two points $P = (x_1, y_1)$ and $Q = (x_2, y_2)$ on the curve</p>
+
+  <div class="equation-box">
+    <div class="equation-label">Point Addition (P $\neq$ Q)</div>
+    $$\lambda = \frac{y_2 - y_1}{x_2 - x_1} \bmod{p}$$
+    $$x_3 = \lambda^2 - x_1 - x_2 \bmod{p}$$
+    $$y_3 = \lambda(x_1 - x_3) - y_1 \bmod{p}$$
+  </div>
+
+  <h4>Point Doubling</h4>
+  <p>When $P = Q$ (adding a point to itself)</p>
+
+  <div class="equation-box">
+    <div class="equation-label">Point Doubling (P = Q)</div>
+    $$\lambda = \frac{3x_1^2 + a}{2y_1} \bmod{p}$$
+    $$x_3 = \lambda^2 - 2x_1 \bmod{p}, \quad y_3 = \lambda(x_1 - x_3) - y_1 \bmod{p}$$
+  </div>
+
+  <h4>Scalar Multiplication</h4>
+  <p>Multiplying a point $G$ by a scalar $d$: $Q = d \cdot G = \underbrace{G + G + \cdots + G}_{d \text{ times}}$</p>
+  <p>Computing $Q = dG$ is fast, but finding $d$ given $Q$ and $G$ is the <em>Elliptic Curve Discrete Logarithm Problem (ECDLP)</em>, which is <strong>cryptographically secure</strong> over large curves.</p>
+
+  <h3>The secp256k1 Curve</h3>
+  <p>This challenge uses <strong>secp256k1</strong> (see: <a href="https://www.secg.org/sec2-v2.pdf" style="color: var(--cyan);">SEC 2: Recommended Elliptic Curve Domain Parameters</a>)</p>
+  <div class="challenge-data" style="font-size: 0.75rem;">
+    Equation: $y^2 = x^3 + 7 \pmod p$<br>
+    p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F<br>
+    Generator G.x = 0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798<br>
+    Generator G.y = 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8<br>
+    Order n = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+  </div>
+
+  <h3>ECDSA Signing Algorithm</h3>
+  <p>Given a private key $d$ and message $m$</p>
+
+  <div class="callout callout-key">
+    <div class="callout-title"></div>
+    <p><strong>1.</strong> Compute the message hash: $z = \text{SHA256}(m) \bmod{n}$</p>
+    <p><strong>2.</strong> Choose a <em>random</em> nonce $k \in [1, n-1]$</p>
+    <p><strong>3.</strong> Compute the curve point: $R = k \cdot G$</p>
+    <p><strong>4.</strong> Extract: $r = R_x \bmod{n}$</p>
+    <p><strong>5.</strong> Compute: $s = k^{-1}(z + r \cdot d) \bmod{n}$</p>
+    <p><strong>6.</strong> The signature is the pair $(r, s)$</p>
+  </div>
+
+  <h3>ECDSA Verification</h3>
+  <p>Given public key $Q$, message $m$, and signature $(r, s)$</p>
+
+  <div class="callout callout-info">
+    <div class="callout-title"></div>
+    <p><strong>1.</strong> Compute $z = \text{SHA256}(m) \bmod{n}$</p>
+    <p><strong>2.</strong> Compute $u_1 = z \cdot s^{-1} \bmod{n}$</p>
+    <p><strong>3.</strong> Compute $u_2 = r \cdot s^{-1} \bmod{n}$</p>
+    <p><strong>4.</strong> Compute $R' = u_1 \cdot G + u_2 \cdot Q$</p>
+    <p><strong>5.</strong> Signature is valid iff $R'_x \equiv r \pmod{n}$</p>
+  </div>
+
+
+  <h3>The Challenge</h3>
+
+  <div class="service-info">
+    <p><strong>Access the service:</strong></p>
+    <pre><code class="language-bash">nc [IP] [PORT]</code></pre>
+  </div>
+
+  <h3>Source Code</h3>
+  <pre><code class="language-python">import hashlib
+from ecdsa import SECP256k1
+from ecdsa.numbertheory import inverse_mod
+
+curve = SECP256k1
+G = curve.generator
+n = curve.order
+
+d = ???             # Secret private key
+k = ???             # Secret private nonce
+
+def ecdsa_sign(message: bytes):
+    z = int(hashlib.sha256(message).hexdigest(), 16) % n
+    R = k * G
+    r = R.x() % n
+    k_inv = inverse_mod(k, n)
+    s = (k_inv * (z + r * d)) % n
+    return r, s, z</code></pre>
+
+  <div class="flag-input-group">
+    <input type="text" class="flag-input" id="flag-10" placeholder="Harm{...}" autocomplete="off">
+    <button class="btn btn-check" onclick="Workshop.checkFlag(10)">Submit</button>
+  </div>
+  <div class="flag-feedback" id="feedback-10"></div>
+  <div class="solved-banner" id="solved-10">Congratulations! You've finished all the challenges :D You get to brag a little</div>
+</section>
+
+
+</main>
+</div>
+
+<!-- Reset progress button -->
+<button class="reset-all-btn" onclick="Workshop.resetAll()">Reset Progress</button>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- WORKSHOP JAVASCRIPT                         -->
+<!-- ═══════════════════════════════════════════ -->
+<script>
+const Workshop = {
+  TOTAL: 10,
+  STORAGE_KEY: 'workshop_progress',
+
+  //
+  FLAG_HASHES: {
+    1:  '0fb5aa3b1991c8ac311f51bdcd3107975c2df9cc3a41fe0272e0cd46becc5e6b',
+    2:  '76df42a8ba0ab02432781f762768d6525120ff235a884ca6c430abe16f7e6c53',
+    3:  '7da9d0deb7d396a263ec30e3072e49c2db79bf4bafb1d75e673b07d4b491622c',
+    4:  '84fc928cb1163a2c5cd7185c7989598f61fda06d19901ab0b8f3a1e00bb1b9de',
+    5:  '84227785db4c53ad88228437807ac2b72ba18e345a88ec50be693c6967eb4082',
+    6:  '8dfdbc50367008462b2bdb918f24f8342073d35a8436d2600e1bfad973902c8f',
+    7:  '1fee5e945552ab7129342bdb4683ef23a5d0a91460994924c843b746cbdcce65',
+    8:  'f230291114ab57731aefac9088b126e68ce8775c124cb32763c1b2106183a6b1',
+    9: '3efc43f985ddefa4cfc523ce8ad06a2297a73302adadb6a01aaafe8d04fb9529',
+    10: '73faa895acb35a221263bcab984c98ee61fb018602721961c376c2041b34fc01',
+  },
+
+  // ── State ──
+  solved: new Set(),
+
+  init() {
+    this.loadState();
+    this.renderAll();
+    this.initNav();
+    this.initKeyboardShortcuts();
+  },
+
+  // ── LocalStorage persistence ──
+  loadState() {
+    try {
+      const data = JSON.parse(localStorage.getItem(this.STORAGE_KEY));
+      if (data && Array.isArray(data.solved)) {
+        this.solved = new Set(data.solved);
+      }
+    } catch(e) {}
+  },
+
+  saveState() {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
+      solved: Array.from(this.solved),
+    }));
+  },
+
+  // ── SHA-256 in browser ──
+  async sha256(text) {
+    const data = new TextEncoder().encode(text);
+    const buf = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  },
+
+  // ── Flag checking ──
+  async checkFlag(n) {
+    const input = document.getElementById(`flag-${n}`);
+    const feedback = document.getElementById(`feedback-${n}`);
+    const value = input.value.trim();
+
+    if (!value) {
+      feedback.textContent = '[!] Enter a flag above';
+      feedback.className = 'flag-feedback incorrect';
+      return;
+    }
+
+    const hash = await this.sha256(value);
+    if (hash === this.FLAG_HASHES[n]) {
+      // Correct!
+      feedback.textContent = '[✓] Correct!';
+      feedback.className = 'flag-feedback correct';
+      input.classList.add('correct');
+      input.classList.remove('incorrect');
+      input.disabled = true;
+
+      this.solved.add(n);
+      this.saveState();
+
+      // Show solved banner
+      const banner = document.getElementById(`solved-${n}`);
+      if (banner) banner.classList.add('show');
+
+      // Unlock next challenge with animation
+      if (n < this.TOTAL) {
+        this.unlockChallenge(n + 1, true);
+      }
+
+      this.updateProgress();
+      this.updateToc();
+    } else {
+      // Incorrect
+      feedback.textContent = '[✗] Incorrect - try again!';
+      feedback.className = 'flag-feedback incorrect';
+      input.classList.add('incorrect');
+      setTimeout(() => input.classList.remove('incorrect'), 400);
+    }
+  },
+
+  // ── Section visibility ──
+  unlockChallenge(n, animate) {
+    const section = document.querySelector(`[data-challenge="${n}"]`);
+    if (!section) return;
+
+    section.classList.remove('workshop-locked');
+    if (animate) {
+      section.classList.add('workshop-unlocking');
+      // Scroll into view
+      setTimeout(() => {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+      // Clean up animation class
+      setTimeout(() => {
+        section.classList.remove('workshop-unlocking');
+        section.classList.add('workshop-unlocked');
+      }, 900);
+    } else {
+      section.classList.add('workshop-unlocked');
+    }
+  },
+
+  renderAll() {
+    // Always show intro
+    // Show challenge 1 always
+    this.unlockChallenge(1, false);
+
+    // Determine max unlocked
+    let maxUnlocked = 1;
+    for (let i = 1; i <= this.TOTAL; i++) {
+      if (this.solved.has(i)) {
+        maxUnlocked = i + 1;
+      } else {
+        break;
+      }
+    }
+
+    // Unlock all solved + next one
+    for (let i = 1; i <= Math.min(maxUnlocked, this.TOTAL); i++) {
+      this.unlockChallenge(i, false);
+    }
+
+    // Lock the rest
+    for (let i = maxUnlocked + 1; i <= this.TOTAL; i++) {
+      const section = document.querySelector(`[data-challenge="${i}"]`);
+      if (section) section.classList.add('workshop-locked');
+    }
+
+    // Restore solved states
+    this.solved.forEach(n => {
+      const input = document.getElementById(`flag-${n}`);
+      const feedback = document.getElementById(`feedback-${n}`);
+      const banner = document.getElementById(`solved-${n}`);
+      if (input) {
+        input.classList.add('correct');
+        input.disabled = true;
+        input.value = '✓ Solved';
+      }
+      if (feedback) {
+        feedback.textContent = '[✓] Solved';
+        feedback.className = 'flag-feedback correct';
+      }
+      if (banner) banner.classList.add('show');
+    });
+
+    this.updateProgress();
+    this.updateToc();
+  },
+
+  // ── Progress bar ──
+  updateProgress() {
+    const count = this.solved.size;
+    const pct = (count / this.TOTAL) * 100;
+    const fill = document.getElementById('ws-progress-fill');
+    const text = document.getElementById('ws-progress-text');
+    if (fill) fill.style.width = `${pct}%`;
+    if (text) text.textContent = `${count} / ${this.TOTAL}`;
+  },
+
+  // ── ToC state ──
+  updateToc() {
+    let maxUnlocked = 1;
+    for (let i = 1; i <= this.TOTAL; i++) {
+      if (this.solved.has(i)) maxUnlocked = i + 1;
+      else break;
+    }
+
+    document.querySelectorAll('#ws-toc a[data-ch]').forEach(link => {
+      const ch = link.dataset.ch;
+      const status = link.querySelector('.toc-status');
+      if (ch === 'intro') {
+        if (status) status.textContent = '';
+        return;
+      }
+
+      const n = parseInt(ch);
+      link.classList.remove('toc-locked', 'toc-solved');
+
+      if (this.solved.has(n)) {
+        if (status) status.textContent = '✅';
+        link.classList.add('toc-solved');
+      } else if (n <= maxUnlocked) {
+        if (status) status.textContent = '🔓';
+      } else {
+        if (status) status.textContent = '🔒';
+        link.classList.add('toc-locked');
+      }
+    });
+  },
+
+  // ── Navigation ──
+  initNav() {
+    // Smooth scroll for ToC links
+    document.querySelectorAll('#ws-toc a').forEach(link => {
+      link.addEventListener('click', (e) => {
+        if (link.classList.contains('toc-locked')) {
+          e.preventDefault();
+          return;
+        }
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document.querySelector('.sidebar')?.classList.remove('open');
+        }
+      });
+    });
+
+    // Hamburger
+    const hamburger = document.querySelector('.hamburger');
+    const sidebar = document.querySelector('.sidebar');
+    if (hamburger && sidebar) {
+      hamburger.addEventListener('click', () => sidebar.classList.toggle('open'));
+      document.addEventListener('click', (e) => {
+        if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== hamburger) {
+          sidebar.classList.remove('open');
+        }
+      });
+    }
+
+    // Active section tracking
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          document.querySelectorAll('#ws-toc a').forEach(l => {
+            l.classList.toggle('active', l.getAttribute('href') === `#${id}`);
+          });
+        }
+      });
+    }, { threshold: 0.05, rootMargin: '0px 0px -20% 0px' });
+
+    document.querySelectorAll('.lecture-section').forEach(s => observer.observe(s));
+  },
+
+  initKeyboardShortcuts() {
+    document.querySelectorAll('.flag-input').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const n = parseInt(input.id.replace('flag-', ''));
+          this.checkFlag(n);
+        }
+      });
+    });
+  },
+
+  // ── Reset ──
+  resetAll() {
+    if (!confirm('Reset all progress? This cannot be undone.')) return;
+    this.solved.clear();
+    localStorage.removeItem(this.STORAGE_KEY);
+    location.reload();
+  },
+};
+
+// ── Init on DOM ready ──
+document.addEventListener('DOMContentLoaded', () => {
+  Workshop.init();
+
+  // Re-render KaTeX after dynamic content
+  if (typeof renderMathInElement === 'function') {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$', right: '$', display: false}
+      ]
+    });
+  }
+
+  // Re-highlight code blocks
+  if (typeof Prism !== 'undefined') {
+    Prism.highlightAll();
+  }
+});
+</script>
+
+</body>
+</html>
